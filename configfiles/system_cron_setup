@@ -1,0 +1,1 @@
+10 9 * * 1-5 /usr/local/bin/python3 /home/ubuntu/PycharmProjects/sources/GlobalInstance.py >> /home/ubuntu/PycharmProjects/sources/logs/system_cronjob.log 2>&1 ; shutdown -h now
