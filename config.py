@@ -18,6 +18,11 @@ SYSTEM_CLOSE_MIN = 45
 GlobalInstObj = None
 
 """
+Multistock constants
+"""
+MULTISTOCK = {}
+
+"""
 Simulation Constants
 """
 SIMULATION_MODE = False
