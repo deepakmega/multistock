@@ -42,7 +42,8 @@ def on_ticks(ws, ticks):
             if(tick_timestamp.time() >= datetime.time(config.CLOSE_HR,config.CLOSE_MIN,0,0) \
                        or tick_timestamp.time() < datetime.time(config.OPEN_HR,config.OPEN_MIN,0,0)):
                 LOG[eachscript['instrument_token']].info("No Candles available after NSE Market hours")
-                return
+                print("Instrument_token=",eachscript['instrument_token'],"No Candles available after NSE Market hours")
+                config.GlobalInstObj.exit_system()
             else:
                 if (endtime[eachscript['instrument_token']] == None):
                     if(tick_timestamp.minute % config.time_interval !=0):
