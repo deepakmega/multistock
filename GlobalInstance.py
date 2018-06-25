@@ -120,7 +120,7 @@ class GlobalInst(object):
     def exit_system(self):
         time.sleep(5)
         print("Closed all market for the day. I'll resume next trading day @9AM. Signing off now...")
-        if (datetime.datetime.now() >= datetime.time(hour=CONFIG.SYSTEM_CLOSE_HR,
+        if (datetime.datetime.now() >= datetime.datetime.now().replace(hour=CONFIG.SYSTEM_CLOSE_HR,
                                                     minute=CONFIG.SYSTEM_CLOSE_MIN, second=0,
                                                     microsecond=0)):
             os._exit(0)
