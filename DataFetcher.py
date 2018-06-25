@@ -41,9 +41,17 @@ def on_ticks(ws, ticks):
         if (config.trading_exchange == "NSE" or config.trading_exchange == "NFO"):
             if(tick_timestamp.time() >= datetime.time(config.CLOSE_HR,config.CLOSE_MIN,0,0) \
                        or tick_timestamp.time() < datetime.time(config.OPEN_HR,config.OPEN_MIN,0,0)):
+                """ if time is near to market openning time """
+                if (tick_timestamp.time() >= datetime.time(9, 0, 0, 0) or
+                            tick_timestamp.time() < datetime.time(config.OPEN_HR, config.OPEN_MIN, 0, 0)):
+                    print("Instrument_token=", eachscript['instrument_token']," Waiting for indian Market to open")
+                    LOG[eachscript['instrument_token']].info("Waiting for indian Market to open")
+                    return
+
                 LOG[eachscript['instrument_token']].info("No Candles available after NSE Market hours")
-                print("Instrument_token=",eachscript['instrument_token'],"No Candles available after NSE Market hours")
+                print("Instrument_token=",eachscript['instrument_token']," No Candles available after NSE Market hours")
                 config.GlobalInstObj.exit_system()
+
             else:
                 if (endtime[eachscript['instrument_token']] == None):
                     if(tick_timestamp.minute % config.time_interval !=0):
