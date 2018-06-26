@@ -42,8 +42,10 @@ def on_ticks(ws, ticks):
             if(tick_timestamp.time() >= datetime.time(config.CLOSE_HR,config.CLOSE_MIN,0,0) \
                        or tick_timestamp.time() < datetime.time(config.OPEN_HR,config.OPEN_MIN,0,0)):
                 """ if time is near to market openning time """
-                if (tick_timestamp.time() >= datetime.time(9, 0, 0, 0) or
-                            tick_timestamp.time() < datetime.time(config.OPEN_HR, config.OPEN_MIN, 0, 0)):
+                if (datetime.datetime.now() >= datetime.datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+                    and datetime.datetime.now() < datetime.datetime.now().replace(hour=config.OPEN_HR,
+                                                                                      minute=config.OPEN_MIN,
+                                                                                      second=0, microsecond=0)):
                     print("Instrument_token=", eachscript['instrument_token']," Waiting for indian Market to open")
                     LOG[eachscript['instrument_token']].info("Waiting for indian Market to open")
                     return
