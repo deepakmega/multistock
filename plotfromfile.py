@@ -161,6 +161,7 @@ def graphData(ma1 , ma2):
 
 
         # RSI
+        """
         if len(config.ohlc_data) > 5 :
             # ax0 - subplot for RSI
             ax0 = plt.subplot2grid((16, 6), (0, 0), sharex=ax1, rowspan=3, colspan=6)
@@ -177,7 +178,7 @@ def graphData(ma1 , ma2):
             plt.ylabel('RSI')
             plt.setp(ax0.get_xticklabels(), visible=False)
             plt.title("Nifty")
-
+        """
 
         # linear regression
         if len(config.ohlc_data) > 5 :

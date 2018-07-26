@@ -26,10 +26,11 @@ def main():
     LOG_EI.setLevel(logging.INFO)
     LOG_EI.addHandler(handler)
 
+
 def placebracketorder(trading_quantity, trading_transaction_type, trading_price, trading_squareoff, trading_stoploss ,
                       trading_trailing_stoploss=None):
     global LOG_EI
-    url = "https://api.kite.trade/orders/" + config.order_variety
+    url = "https://api.kite.trade/orders/BO"
     var = "token " + config.API_KEY + ":" + config.ACCESS_TOKEN
     if trading_trailing_stoploss !=None:
         payload = {
@@ -60,8 +61,16 @@ def placebracketorder(trading_quantity, trading_transaction_type, trading_price,
         "X-Kite-Version": '3',
         "Authorization": var
     }
+
     if (config.SIMULATION_MODE):
         cur_time = datetime.datetime.now()
+        no_trading_time = datetime.datetime.now().replace(hour=config.CLOSE_HR, minute=0, second=0, microsecond=0)
+        if config.CLOSE_HR < 6 and cur_time.hour>17:
+            pass
+        elif (cur_time >= no_trading_time):
+            LOG_EI.error("Order rejected due to near market closing time.")
+            return
+
         oid = int(cur_time.strftime("%s"))
         LOG_EI.info("Bracket Order Placed successfully TYPE=%s, price=%s with squareoff=%s stoploss=%s and order_id=%s",
                     trading_transaction_type,
@@ -74,18 +83,97 @@ def placebracketorder(trading_quantity, trading_transaction_type, trading_price,
         return
 
     cur_time = datetime.datetime.now()
-    no_trading_time = datetime.datetime.now().replace(hour=config.CLOSE_HR, minute=0, second=0, microsecond=0)
+
+    if config.trading_exchange == "MCX":
+        no_trading_time = datetime.datetime.now().replace(hour=config.CLOSE_HR_COMMODITY,
+                                                          minute=0, second=0, microsecond=0)
+
+    elif config.trading_exchange == "NFO" or config.trading_exchange == "NSE":
+        no_trading_time = datetime.datetime.now().replace(hour=config.CLOSE_HR, minute=0, second=0, microsecond=0)
+
     if ( cur_time >= no_trading_time):
-        LOG_EI.error("Order rejected due to near market closing time.")
+        LOG_EI.error("Order rejected due to near market closing time for the trading_exchange = %s",
+                     config.trading_exchange)
         return
 
     requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':ECDHE-RSA-AES256-GCM-SHA384'
     response = requests.post(url, data=payload, headers=headers)
     json_order_place_response = json.loads(response.text)
-    LOG_EI.info("Bracket Order Placed successfully TYPE=%s, price=%s with squareoff=%s stoploss=%s and order_id=%s", trading_transaction_type,
-             trading_price, trading_squareoff, trading_stoploss, json_order_place_response['data']['order_id'])
+    LOG_EI.info("Bracket Order Placed successfully TYPE=%s, price=%s with squareoff=%s stoploss=%s and order_id=%s",
+                trading_transaction_type, trading_price, trading_squareoff, trading_stoploss,
+                json_order_place_response['data']['order_id'])
+
+    return
 
 
+def placecoverorder(trading_quantity, trading_transaction_type, trading_price, trading_squareoff, trading_stoploss ,
+                      trading_trailing_stoploss=None):
+    global LOG_EI
+    url = "https://api.kite.trade/orders/CO"
+    var = "token " + config.API_KEY + ":" + config.ACCESS_TOKEN
+
+    trigger_price = trading_price
+    if trading_transaction_type == "BUY":
+        trigger_price = trading_price - trading_stoploss
+    elif trading_transaction_type == "SELL":
+        trigger_price = trading_price + trading_stoploss
+
+    if trading_trailing_stoploss != None:
+        payload = {
+            "tradingsymbol": config.trading_symbol,
+            "exchange": config.trading_exchange,
+            "transaction_type": trading_transaction_type,
+            "order_type": config.trading_order_type,
+            "quantity": trading_quantity,
+            "product": config.trading_product,
+            "price": trading_price,
+            "trigger_price":trigger_price
+        }
+    else:
+        payload = {
+            "tradingsymbol": config.trading_symbol,
+            "exchange": config.trading_exchange,
+            "transaction_type": trading_transaction_type,
+            "order_type": config.trading_order_type,
+            "quantity": trading_quantity,
+            "product": config.trading_product,
+            "price": trading_price,
+            "trigger_price": trigger_price
+        }
+    headers = {
+        "X-Kite-Version": '3',
+        "Authorization": var
+    }
+
+    cur_time = datetime.datetime.now()
+    if config.trading_exchange == "MCX":
+        no_trading_time = datetime.datetime.now().replace(hour=config.CLOSE_HR_COMMODITY,
+                                                          minute=0, second=0, microsecond=0)
+    else:
+        no_trading_time = datetime.datetime.now().replace(hour=config.CLOSE_HR, minute=0, second=0, microsecond=0)
+
+    if (cur_time >= no_trading_time):
+        LOG_EI.error("Order rejected due to near market closing time for the trading_exchange = %s",
+                     config.trading_exchange)
+        return
+
+    requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':ECDHE-RSA-AES256-GCM-SHA384'
+    response = requests.post(url, data=payload, headers=headers)
+    json_order_place_response = json.loads(response.text)
+
+    print(json_order_place_response)
+    payload['stoploss'] = trading_stoploss
+    payload['squareoff'] = trading_squareoff
+    payload['instrument_token'] = str(config.TRADE_INSTRUMENT)
+
+    config.OPEN_COVER_ORDERS[json_order_place_response['data']['order_id']] = payload
+
+    LOG_EI.info("Cover Order Placed successfully TYPE=%s, price=%s with squareoff=%s stoploss=%s and order_id=%s",
+                trading_transaction_type, trading_price, trading_squareoff, trading_stoploss,
+                json_order_place_response['data']['order_id'])
+    LOG_EI.info(json_order_place_response)
+
+    return
 
 
 def placeorder(trading_quantity,  trading_transaction_type,  trading_price, parentorder, target_price, ref=None):

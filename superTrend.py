@@ -202,6 +202,10 @@ class SuperTrend():
                             + CONFIG.TRUE_RANGE[cur_idx]) / float(CONFIG.SUPER_PERIOD)
 
             CONFIG.AVG_TRUE_RANGE[cur_idx] = (float(format(cur_atr, '.2f')))
+            if CONFIG.trading_exchange == "MCX":
+                if CONFIG.AVG_TRUE_RANGE[cur_idx] > (2 * CONFIG.COMMODITY_PROFIT_MARGIN):
+                    CONFIG.AVG_TRUE_RANGE[cur_idx] = (2 * CONFIG.COMMODITY_PROFIT_MARGIN - 1)
+
             self.LOG.info("ATR:%s, len:%d", CONFIG.AVG_TRUE_RANGE[cur_idx], len(CONFIG.AVG_TRUE_RANGE))
             self.average_TR.append(float(format(cur_atr, '.2f')))
 
@@ -229,6 +233,9 @@ class SuperTrend():
         prev_mkt_idx = cur_mkt_idx - datetime.timedelta(minutes=CONFIG.time_interval)
         prev_idx = str(prev_mkt_idx)
 
+        prev_prev_mkt_idx = prev_mkt_idx - datetime.timedelta(minutes=CONFIG.time_interval)
+        prev_prev_idx = str(prev_prev_mkt_idx)
+
         """unset previously set up/down immediate next candles, because they are prev candles now.
         Ref Var declaration for more understanding.
         """
@@ -255,27 +262,27 @@ class SuperTrend():
             CONFIG.SUPERTREND[cur_idx] = CONFIG.SUPERTREND[prev_idx]
 
         optimal_supertrend_price = CONFIG.SUPERTREND[prev_idx]
-        """
+        if (prev_idx not in self.TREND.keys()):
+            """Sometimes its possible that Trend[prev] is missing."""
+            self.TREND[prev_idx] = self.TREND.get(prev_prev_idx)
+
         if (cur_idx not in self.TREND.keys()):
-            '''
-            This is the only case where trend is still continuing to be UP/DOWN. During change in trend, 
-            we are already creating the dictionary entry with 'next_idx'.
-            '''
-            self.TREND[cur_idx] = self.TREND[prev_idx]
-        """
+            """Sometimes its possible that Trend[cur] is missing"""
+            self.TREND[cur_idx] = self.TREND.get(prev_idx)
+
         if cur_idx not in CONFIG.LINEAR_REGRESSION_PREDICTOR.keys():
             CONFIG.LINEAR_REGRESSION_PREDICTOR[cur_idx] = CONFIG.LINEAR_REGRESSION.get(cur_idx)
 
         # redLine =  (float(CONFIG.tick[cur_idx][1] + CONFIG.tick[cur_idx][2]) / 2.0 + CONFIG.AVG_TRUE_RANGE[cur_idx]*CONFIG.SUPER_MULTIPLIER)
         redLine = (float(CONFIG.SUPERTREND[prev_idx]) + CONFIG.AVG_TRUE_RANGE[cur_idx])  # * CONFIG.SUPER_MULTIPLIER)
         cur_upper_band = (float(format(redLine, '.2f')))
-        super_upper_band = cur_upper_band + CONFIG.AVG_TRUE_RANGE[cur_idx]
+        super_upper_band = cur_upper_band + CONFIG.AVG_TRUE_RANGE[cur_idx]/2.0
         super_upper_band = (float(format(super_upper_band, '.2f')))
 
         # greenLine = (float(CONFIG.tick[cur_idx][1] + CONFIG.tick[cur_idx][2]) / 2.0 - CONFIG.AVG_TRUE_RANGE[cur_idx]*CONFIG.SUPER_MULTIPLIER)
         greenLine = (float(CONFIG.SUPERTREND[prev_idx]) - CONFIG.AVG_TRUE_RANGE[cur_idx])  # * CONFIG.SUPER_MULTIPLIER)
         cur_lower_band = (float(format(greenLine, '.2f')))
-        super_lower_band = cur_lower_band - CONFIG.AVG_TRUE_RANGE[cur_idx]
+        super_lower_band = cur_lower_band - CONFIG.AVG_TRUE_RANGE[cur_idx]/2.0
         super_lower_band = (float(format(super_lower_band, '.2f')))
 
         """
@@ -299,17 +306,15 @@ class SuperTrend():
                             CONFIG.SUPERTREND[prev_idx], CONFIG.SUPERTREND[cur_idx],
                             cur_lower_band, cur_upper_band)
 
-                        if ((cur_idx) not in self.BUY_LIST.keys()) \
-                                and (CONFIG.RSI[prev_idx] < CONFIG.RSI_OVERBOUGHT \
-                                    or CONFIG.RSI.get(cur_idx, CONFIG.RSI[prev_idx]) < CONFIG.RSI_OVERBOUGHT):
+                        if ((cur_idx) not in self.BUY_LIST.keys()):
                             self.local_placeorder("BUY", CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP),
                                                   cur_lower_band, cur_idx)
                             self.LOG.info("Buy order placed at LR:%f",
                                           CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP))
 
                         else:
-                            self.LOG.error("Buy Order for this timestamp:%s might have been already placed OR"
-                                           "cur RSI=%f, Overbought=%f", cur_idx, CONFIG.RSI[cur_idx], CONFIG.RSI_OVERBOUGHT)
+                            self.LOG.error("Buy Order for this timestamp:%s might have been already placed", cur_idx)
+
                         return
 
                     """
@@ -340,16 +345,14 @@ class SuperTrend():
                                   CONFIG.SUPERTREND[cur_idx], CONFIG.SUPERTREND[next_idx],
                                   cur_lower_band, cur_upper_band)
 
-                    if ((cur_idx) not in self.BUY_LIST.keys()) and CONFIG.RSI[cur_idx] < CONFIG.RSI_OVERBOUGHT:
+                    if ((cur_idx) not in self.BUY_LIST.keys()):
                         self.local_placeorder("BUY", CONFIG.LINEAR_REGRESSION_PREDICTOR.get(cur_idx, CONFIG.MARKET_LTP),
                                               cur_lower_band, cur_idx)
                         self.LOG.info("Buy order placed at LR:%f",
                                       CONFIG.LINEAR_REGRESSION_PREDICTOR.get(cur_idx, CONFIG.MARKET_LTP))
-
                     else:
-                        self.LOG.error("Buy Order for this timestamp:%s might have been already placed OR"
-                                       " cur RSI=%f, Overbought=%f", cur_idx, CONFIG.RSI[cur_idx],
-                                       CONFIG.RSI_OVERBOUGHT)
+                        self.LOG.error("Buy Order for this timestamp:%s might have been already placed ", cur_idx)
+
                     return
 
                 elif (candle_beginning_time >= datetime.datetime.now().replace(microsecond=0)):
@@ -388,18 +391,14 @@ class SuperTrend():
                                   CONFIG.SUPERTREND[prev_idx], CONFIG.SUPERTREND[cur_idx],
                                   cur_lower_band, cur_upper_band)
 
-                    if ((cur_idx) not in self.BUY_LIST.keys()) \
-                            and (CONFIG.RSI[prev_idx] < CONFIG.RSI_OVERBOUGHT \
-                                         or CONFIG.RSI.get(cur_idx, CONFIG.RSI[prev_idx]) < CONFIG.RSI_OVERBOUGHT):
+                    if ((cur_idx) not in self.BUY_LIST.keys()):
                         self.local_placeorder("BUY", CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP),
                                               cur_lower_band, cur_idx)
                         self.LOG.info("Buy order placed at LR:%f",
                                       CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP))
 
                     else:
-                        self.LOG.error("Buy Order for this timestamp:%s might have been already placed OR"
-                                       " cur RSI=%f, Overbought=%f", cur_idx, CONFIG.RSI[prev_idx],
-                                       CONFIG.RSI_OVERBOUGHT)
+                        self.LOG.error("Buy Order for this timestamp:%s might have been already placed", cur_idx)
                     return
                 else:
                     self.LOG.info("Candle not closed yet. It is still Trend:%s", self.TREND[cur_idx])
@@ -425,38 +424,73 @@ class SuperTrend():
                                   CONFIG.SUPERTREND[prev_idx], CONFIG.SUPERTREND[cur_idx],
                                   cur_lower_band, cur_upper_band)
 
-                    if ((cur_idx) not in self.BUY_LIST.keys()) and CONFIG.RSI[cur_idx] < CONFIG.RSI_OVERBOUGHT:
+                    if ((cur_idx) not in self.BUY_LIST.keys()):
                         self.local_placeorder("BUY", CONFIG.LINEAR_REGRESSION_PREDICTOR.get(cur_idx, CONFIG.MARKET_LTP),
                                               cur_lower_band, cur_idx)
                         self.LOG.info("Buy order placed at LR:%f",
                                       CONFIG.LINEAR_REGRESSION_PREDICTOR.get(cur_idx, CONFIG.MARKET_LTP))
 
                     else:
-                        self.LOG.error("Buy Order for this timestamp:%s might have been already placed OR"
-                                       " cur RSI=%f, Overbought=%f", cur_idx, CONFIG.RSI[cur_idx],
-                                       CONFIG.RSI_OVERBOUGHT)
+                        self.LOG.error("Buy Order for this timestamp:%s might have been already placed", cur_idx)
+                    return
+
+                    """Trend[prev] is UP and the Trend[cur] was running DOWN. But by end of the candle, the LTP is more 
+                    than Supertrend[cur]. If this condition is not handled, then Supertrend will still do up due to next
+                    sequence of programming. In reality, it should have been long buy.
+                    """
+                elif (self.TREND.get(cur_idx, None) == "DOWN"):
+                    CONFIG.SUPERTREND[cur_idx] = super_lower_band
+                    self.TREND[cur_idx] = "UP"
+                    self.LOG.info("Trend changed from DOWN to UP at the 7th candle. Close:%f, prev_supertrend=%f, "
+                              "cur_supertrend=%f, cur_lower_band=%f, cur_upper_band=%f", CONFIG.tick[cur_idx][3],
+                              CONFIG.SUPERTREND[prev_idx], CONFIG.SUPERTREND[cur_idx],
+                              cur_lower_band, cur_upper_band)
+
+                    if ((cur_idx) not in self.BUY_LIST.keys()):
+                        self.local_placeorder("BUY", CONFIG.LINEAR_REGRESSION_PREDICTOR.get(cur_idx, CONFIG.MARKET_LTP),
+                                          CONFIG.AVG_TRUE_RANGE[cur_idx] * 10, cur_idx)
+                        self.LOG.info("Buy order placed at LR:%f",
+                                  CONFIG.LINEAR_REGRESSION_PREDICTOR.get(cur_idx, CONFIG.MARKET_LTP))
+
+                    else:
+                        self.LOG.error("Buy Order for this timestamp:%s might have been already placed", cur_idx)
                     return
 
             """
             local_lower_band = (float(CONFIG.tick[cur_idx][1] + CONFIG.tick[cur_idx][2]) / 2.0 - CONFIG.AVG_TRUE_RANGE[cur_idx])
             local_lower_band = (float(format(local_lower_band, '.2f')))
             """
-            local_lower_band = (float(CONFIG.tick[cur_idx][2]) - CONFIG.AVG_TRUE_RANGE[cur_idx] * 1.5)
+            """ Either local_lower_band is sufficiently lower than cur_upper_band or there should be at least 1 ATR 
+                distance of High and Low.
+            """
+            local_lower_band = (float(CONFIG.tick[cur_idx][2]) - CONFIG.AVG_TRUE_RANGE[cur_idx] )
             local_lower_band = (float(format(local_lower_band, '.2f')))
-            if (local_lower_band >= cur_upper_band) and \
-                    (local_lower_band - cur_upper_band) > (CONFIG.NIFTY_EXPECTED_ATR/2.0) and \
+            if ((local_lower_band >= cur_upper_band) and \
+                    (local_lower_band - cur_upper_band) > (1) and \
                         (CONFIG.tick[cur_idx][3] > cur_upper_band) and \
-                            (cur_idx not in self.up_nxt_candle.keys()):
+                            (cur_idx not in self.up_nxt_candle.keys())):
                 CONFIG.SUPERTREND[cur_idx] = cur_upper_band
                 self.LOG.info("At Uptrend, Updated the supertrend to:%f, cur_lower_bound:%f, local_upper_bound:%f",
                               CONFIG.SUPERTREND[cur_idx], cur_upper_band, local_lower_band)
-            """
-            if (cur_lower_band > CONFIG.SUPERTREND[cur_idx]):
-                CONFIG.SUPERTREND[cur_idx] = cur_lower_band
-                self.LOG.info("At Uptrend, Updated from supertrend:%f, to supertrend:%f, cur_lower_bound:%f",
-                              CONFIG.SUPERTREND[prev_idx], CONFIG.SUPERTREND[cur_idx], cur_lower_band)
-            """
 
+                if ((cur_idx) not in self.BUY_LIST.keys()):
+                    self.local_placeorder("BUY", CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP),
+                                          cur_lower_band, cur_idx)
+                    self.LOG.info("Buy order placed at LR:%f",
+                                  CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP))
+                else:
+                    self.LOG.error("Buy Order for this timestamp:%s might have been already placed", cur_idx)
+            """
+            elif ((abs(CONFIG.tick[cur_idx][3] - CONFIG.tick[cur_idx][2])) > CONFIG.AVG_TRUE_RANGE[cur_idx]):
+                self.LOG.info("At Uptrend, Close - low is 1ATR far distance. Place 1 buy order")
+                if ((cur_idx) not in self.BUY_LIST.keys()):
+                    self.local_placeorder("BUY", CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP),
+                                          cur_lower_band, cur_idx)
+                    self.LOG.info("Buy order placed at LR:%f",
+                                  CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP))
+                else:
+                    self.LOG.error("Buy Order for this timestamp:%s might have been already placed", cur_idx)
+            """
             if (CONFIG.SUPERTREND[cur_idx] >= CONFIG.SUPERTREND[prev_idx]) and \
                     (candle_closing_time != datetime.datetime.now().replace(microsecond=0)):
                 self.LOG.info("Running Up trend, Mkt_LTP:%f, cur_close:%f, supertrend:%f",
@@ -489,18 +523,15 @@ class SuperTrend():
                             CONFIG.SUPERTREND[prev_idx], CONFIG.SUPERTREND[cur_idx],
                             cur_lower_band, cur_upper_band)
 
-                        if ((cur_idx) not in self.SELL_LIST.keys()) \
-                                and (CONFIG.RSI[prev_idx] > CONFIG.RSI_OVERSOLD \
-                                             or CONFIG.RSI.get(cur_idx, CONFIG.RSI[prev_idx]) > CONFIG.RSI_OVERSOLD):
+                        if ((cur_idx) not in self.SELL_LIST.keys()):
                             self.local_placeorder("SELL", CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP),
                                                   cur_upper_band, cur_idx)
                             self.LOG.info("Sell order placed at LR:%f",
                                           CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP))
 
                         else:
-                            self.LOG.error("Sell Order for this timestamp:%s might have been already placed OR"
-                                           " cur RSI=%f, Oversold=%f", cur_idx, CONFIG.RSI[prev_idx],
-                                           CONFIG.RSI_OVERSOLD)
+                            self.LOG.error("Sell Order for this timestamp:%s might have been already placed", cur_idx)
+
                         return
                     """
                     Candle[prev] was above supertrend[cur]. Candle[cur] is below supertrend at the closing time. The 
@@ -528,13 +559,14 @@ class SuperTrend():
                                   CONFIG.SUPERTREND[cur_idx], CONFIG.SUPERTREND[next_idx],
                                   cur_lower_band, cur_upper_band)
 
-                    if ((cur_idx) not in self.SELL_LIST.keys()) and CONFIG.RSI[cur_idx] > CONFIG.RSI_OVERSOLD:
-                        self.local_placeorder("SELL",CONFIG.LINEAR_REGRESSION_PREDICTOR.get(cur_idx, CONFIG.MARKET_LTP), cur_upper_band, cur_idx)
+                    if ((cur_idx) not in self.SELL_LIST.keys()):
+                        self.local_placeorder("SELL",CONFIG.LINEAR_REGRESSION_PREDICTOR.get(cur_idx, CONFIG.MARKET_LTP),
+                                              cur_upper_band, cur_idx)
                         self.LOG.info("sell order placed at LR:%f",
                                       CONFIG.LINEAR_REGRESSION_PREDICTOR.get(cur_idx, CONFIG.MARKET_LTP))
                     else:
-                        self.LOG.error("Sell Order for this timestamp:%s might have been already placed OR"
-                                       "cur RSI=%f, Oversold=%f", cur_idx, CONFIG.RSI[cur_idx], CONFIG.RSI_OVERSOLD)
+                        self.LOG.error("Sell Order for this timestamp:%s might have been already placed", cur_idx)
+
                     return
                 elif (candle_beginning_time >= datetime.datetime.now().replace(microsecond=0)):
 
@@ -562,7 +594,7 @@ class SuperTrend():
                     if prev_idx not in self.SELL_LIST:
                         CONFIG.SUPERTREND[cur_idx] = super_upper_band
                     """else: continue with whatever supertrend[cur] has. Remember it was already update prev candle 
-                    closing time.
+                        closing time.
                     """
                     self.TREND[cur_idx] = "DOWN"
                     self.LOG.info("Trend changed from UP to DOWN. close=%f, prev_supertrend=%f, cur_supertrend=%f, "
@@ -570,17 +602,14 @@ class SuperTrend():
                                   CONFIG.SUPERTREND[prev_idx], CONFIG.SUPERTREND[cur_idx],
                                   cur_lower_band, cur_upper_band)
 
-                    if ((cur_idx) not in self.SELL_LIST.keys()) \
-                            and (CONFIG.RSI[prev_idx] > CONFIG.RSI_OVERSOLD \
-                                         or CONFIG.RSI.get(cur_idx, CONFIG.RSI[prev_idx]) > CONFIG.RSI_OVERSOLD):
+                    if ((cur_idx) not in self.SELL_LIST.keys()):
                         self.local_placeorder("SELL", CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP),
                                               cur_upper_band, cur_idx)
                         self.LOG.info("sell order placed at LR:%f",
                                       CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP))
 
                     else:
-                        self.LOG.error("Sell Order for this timestamp:%s might have been already placed OR"
-                                       "cur RSI=%f, Oversold=%f", cur_idx, CONFIG.RSI[cur_idx], CONFIG.RSI_OVERSOLD)
+                        self.LOG.error("Sell Order for this timestamp:%s might have been already placed", cur_idx)
                     return
                 else:
                     self.LOG.info("Candle not closed yet. It is still Trend:%s", self.TREND[cur_idx])
@@ -607,36 +636,75 @@ class SuperTrend():
                                   CONFIG.SUPERTREND[prev_idx], CONFIG.SUPERTREND[cur_idx],
                                   cur_lower_band, cur_upper_band)
 
-                    if ((cur_idx) not in self.SELL_LIST.keys()) and CONFIG.RSI[cur_idx] > CONFIG.RSI_OVERSOLD:
+                    if ((cur_idx) not in self.SELL_LIST.keys()):
                         self.local_placeorder("SELL", CONFIG.LINEAR_REGRESSION_PREDICTOR.get(cur_idx, CONFIG.MARKET_LTP),
                                               cur_upper_band, cur_idx)
                         self.LOG.info("sell order placed at LR:%f",
                                       CONFIG.LINEAR_REGRESSION_PREDICTOR.get(cur_idx, CONFIG.MARKET_LTP))
+                    else:
+                        self.LOG.error("Sell Order for this timestamp:%s might have been already placed",cur_idx)
+
+                    return
+
+                    """Trend[prev] is DOWN and the Trend[cur] was running UP. But by end of the candle, the LTP is less 
+                    than Supertrend[cur]. If this condition is not handled, then Supertrend will still do down due to next
+                    sequence of programming. In reality, it should have been shortsell.
+                    """
+                elif (self.TREND.get(cur_idx, None) == "UP"):
+                    CONFIG.SUPERTREND[cur_idx] = super_upper_band
+                    self.TREND[cur_idx] = "DOWN"
+                    self.LOG.info("Trend changed from UP to DOWN at 7th candle. close=%f, prev_supertrend=%f, "
+                              "cur_supertrend=%f, cur_lower_band=%f, cur_upper_band=%f", CONFIG.tick[cur_idx][3],
+                              CONFIG.SUPERTREND[prev_idx], CONFIG.SUPERTREND[cur_idx],
+                              cur_lower_band, cur_upper_band)
+
+                    if ((cur_idx) not in self.SELL_LIST.keys()):
+                        self.local_placeorder("SELL",
+                                          CONFIG.LINEAR_REGRESSION_PREDICTOR.get(cur_idx, CONFIG.MARKET_LTP),
+                                          CONFIG.AVG_TRUE_RANGE[cur_idx] * 10, cur_idx)
+                        self.LOG.info("sell order placed at LR:%f",
+                                  CONFIG.LINEAR_REGRESSION_PREDICTOR.get(cur_idx, CONFIG.MARKET_LTP))
 
                     else:
-                        self.LOG.error("Sell Order for this timestamp:%s might have been already placed OR"
-                                       "cur RSI=%f, Oversold=%f", cur_idx, CONFIG.RSI[cur_idx], CONFIG.RSI_OVERSOLD)
+                        self.LOG.error("Sell Order for this timestamp:%s might have been already placed",cur_idx)
+
                     return
 
             """
             local_upper_band = (float(CONFIG.tick[cur_idx][1] + CONFIG.tick[cur_idx][2]) / 2.0 + CONFIG.AVG_TRUE_RANGE[cur_idx])
             local_upper_band = (float(format(local_upper_band, '.2f')))
             """
-            local_upper_band = (float(CONFIG.tick[cur_idx][1]) + CONFIG.AVG_TRUE_RANGE[cur_idx] * 1.5)
+            """ Either local_upper_band is sufficiently lower than cur_lower_band or there should be at least 1 ATR 
+            distance of High and Low.
+            """
+            local_upper_band = (float(CONFIG.tick[cur_idx][1]) + CONFIG.AVG_TRUE_RANGE[cur_idx])
             local_upper_band = (float(format(local_upper_band, '.2f')))
-            if (local_upper_band <= cur_lower_band) and \
-                    (cur_lower_band - local_upper_band) > (CONFIG.NIFTY_EXPECTED_ATR/2.0) and \
+            if ((local_upper_band <= cur_lower_band) and \
+                    (cur_lower_band - local_upper_band) > (1) and \
                         (CONFIG.tick[cur_idx][3] < cur_lower_band) and \
-                            (cur_idx not in self.down_nxt_candle.keys()):
+                            (cur_idx not in self.down_nxt_candle.keys())):
                 CONFIG.SUPERTREND[cur_idx] = cur_lower_band
                 self.LOG.info("At Downtrend, Updated the supertrend to:%f. cur_lower_bound:%f, local_upper_bound:%f",
                               CONFIG.SUPERTREND[cur_idx], cur_lower_band, local_upper_band)
+                if ((cur_idx) not in self.SELL_LIST.keys()):
+                    self.local_placeorder("SELL", CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP),
+                                          cur_upper_band, cur_idx)
+                    self.LOG.info("Sell order placed at LR:%f",
+                                  CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP))
+                else:
+                    self.LOG.error("Sell order might have been already placed for timestamp=%s", cur_idx)
             """
-            if (cur_upper_band < CONFIG.SUPERTREND[cur_idx]):
-                CONFIG.SUPERTREND[cur_idx] = cur_upper_band
-                self.LOG.info("At Downtrend, Updated from supertrend:%f, to supertrend:%f. cur_upper_bound:%f",
-                                CONFIG.SUPERTREND[prev_idx], CONFIG.SUPERTREND[cur_idx], cur_upper_band)
+            elif((abs(CONFIG.tick[cur_idx][1] - CONFIG.tick[cur_idx][3])) > CONFIG.AVG_TRUE_RANGE[cur_idx]):
+                self.LOG.info("At Downtrend, high - low is 1ATR away. Place an order ")
+                if ((cur_idx) not in self.SELL_LIST.keys()):
+                    self.local_placeorder("SELL", CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP),
+                                          cur_upper_band, cur_idx)
+                    self.LOG.info("Sell order placed at LR:%f",
+                                  CONFIG.LINEAR_REGRESSION.get(cur_idx, CONFIG.MARKET_LTP))
+                else:
+                    self.LOG.error("Sell order might have been already placed for timestamp=%s", cur_idx)
             """
+
 
             if (CONFIG.SUPERTREND[cur_idx] <= CONFIG.SUPERTREND[prev_idx]) and \
                     (candle_closing_time != datetime.datetime.now().replace(microsecond=0)):
@@ -691,20 +759,40 @@ class SuperTrend():
     """
 
     def local_placeorder(self, ORDER_TYPE, mkt_price, stoploss, cur_idx):
-        mkt_price = CONFIG.PRICE_FORMAT(mkt_price)
+        cur_time = datetime.datetime.now()
+        cur_min = cur_time.minute - (cur_time.minute % CONFIG.time_interval)
+        cur_mkt_idx = cur_time.replace(minute=cur_min, second=0, microsecond=0)
+        cur_idx = str(cur_mkt_idx)
 
-        target = CONFIG.NIFTY_PROFIT_MARGIN
-        if math.ceil(CONFIG.AVG_TRUE_RANGE[cur_idx]) > target:
+        prev_mkt_idx = cur_mkt_idx - datetime.timedelta(minutes=CONFIG.time_interval)
+        prev_idx = str(prev_mkt_idx)
+
+        # mkt_price = CONFIG.PRICE_FORMAT(mkt_price)
+        mkt_price = CONFIG.MARKET_LTP
+        if CONFIG.trading_exchange == "MCX":
+            target = CONFIG.COMMODITY_PROFIT_MARGIN
+        elif CONFIG.trading_exchange == "NFO":
+            target = CONFIG.NIFTY_PROFIT_MARGIN
+
+        '''
+        if (False) and math.ceil(CONFIG.AVG_TRUE_RANGE[cur_idx]) > target:
             target = math.ceil(CONFIG.AVG_TRUE_RANGE[cur_idx])
             """There is possibility that, Market can move 3times the ATR value to just cut the trade.
             For safer side, keep the stoploss 2 unit more.
             """
-            stoploss = target * (CONFIG.SUPER_MULTIPLIER+2)
+            stoploss = target * (CONFIG.SUPER_MULTIPLIER + 2)
         else:
             """There is possibility that, Market can move 3times the ATR value to just cut the trade.
             For safer side, keep the stoploss 2 unit more.
             """
-            stoploss = math.ceil(target) * (CONFIG.SUPER_MULTIPLIER+2)
+            stoploss = math.ceil(target) * (CONFIG.SUPER_MULTIPLIER + 2)
+        '''
+
+        stoploss = math.floor(abs(CONFIG.MARKET_LTP - CONFIG.SUPERTREND.get(cur_idx, prev_idx)))+2
+        if stoploss > (CONFIG.COMMODITY_PROFIT_MARGIN*2):
+            stoploss = (CONFIG.COMMODITY_PROFIT_MARGIN*2)
+        if stoploss <= (CONFIG.COMMODITY_PROFIT_MARGIN):
+            stoploss = (CONFIG.COMMODITY_PROFIT_MARGIN*1.5)
 
         dt = datetime.datetime.now()
         order = {}
@@ -720,8 +808,12 @@ class SuperTrend():
             order["stoploss"] = stoploss
             self.BUY_LIST[cur_idx] = order
             self.LOG.info("Buy order placed successfully order details: %s", str(order))
-            ExchangeInterface.placebracketorder(CONFIG.trading_quantity, "BUY", order["buy_price"],
+            if CONFIG.trading_exchange == "MCX":
+                ExchangeInterface.placecoverorder(CONFIG.trading_quantity, "BUY", order["buy_price"],
                                                 order["target"], order["stoploss"])
+            else:
+                ExchangeInterface.placebracketorder(CONFIG.trading_quantity, "BUY", order["buy_price"],
+                                             order["target"], order["stoploss"])
 
         order = {}
         if ORDER_TYPE == "SELL":
@@ -735,7 +827,12 @@ class SuperTrend():
             order["stoploss"] = stoploss
             self.SELL_LIST[cur_idx] = order
             self.LOG.info("Sell order placed successfully order details: %s", str(order))
-            ExchangeInterface.placebracketorder(CONFIG.trading_quantity, "SELL", order["sell_price"],
+
+            if CONFIG.trading_exchange == "MCX":
+                ExchangeInterface.placecoverorder(CONFIG.trading_quantity, "SELL", order["sell_price"],
+                                              order["target"], order["stoploss"])
+            else:
+                ExchangeInterface.placebracketorder(CONFIG.trading_quantity, "SELL", order["sell_price"],
                                                 order["target"], order["stoploss"])
 
         return
@@ -757,6 +854,7 @@ class SuperTrend():
 
         prev_mkt_idx = cur_mkt_idx - datetime.timedelta(minutes=CONFIG.time_interval)
         prev_idx = str(prev_mkt_idx)
+
         if prev_idx not in self.temp_avg.keys():
             self.temp_avg[prev_idx] = 0
 
@@ -769,7 +867,10 @@ class SuperTrend():
                               CONFIG.SUPER_PERIOD)
                 self.upper[cur_idx] = CONFIG.tick[cur_idx][3]
                 self.lower[cur_idx] = CONFIG.tick[cur_idx][3]
-                self.temp_avg[cur_idx] = float(CONFIG.tick[cur_idx][1] + CONFIG.tick[cur_idx][2]) / 2.0
+                if (cur_time.second >55 and cur_time.second<=59):
+                    self.temp_avg[cur_idx] = CONFIG.tick[cur_idx][3]#float(CONFIG.tick[cur_idx][1] + CONFIG.tick[cur_idx][2]) / 2.0
+                else:
+                    return
                 self.temp_avg[cur_idx] = (float(format(self.temp_avg[cur_idx], '.2f')))
                 CONFIG.SUPERTREND[cur_idx] = self.temp_avg[cur_idx]
                 if self.temp_avg[cur_idx] > self.temp_avg[prev_idx]:
@@ -791,15 +892,33 @@ class SuperTrend():
 
 
 def main():
+    while (True):
+        tick_timestamp = datetime.datetime.now().replace(microsecond=0)
+        if (tick_timestamp.minute % CONFIG.time_interval == 0):
+            break
+
     obj = SuperTrend()
-    market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR, minute=CONFIG.CLOSE_MIN, second=0,
-                                                      microsecond=0)
+    if CONFIG.trading_exchange == "MCX":
+        market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR_COMMODITY,
+                                                          minute=CONFIG.CLOSE_MIN_COMMODITY, second=0,
+                                                          microsecond=0)
+    else:
+        market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR,
+                                                          minute=CONFIG.CLOSE_MIN, second=0,
+                                                          microsecond=0)
+
     while True:
         Timer(1, obj.main_supertrend, []).run()
 
-        if (CONFIG.trading_exchange == "NSE" or CONFIG.trading_exchange == "NFO"):
-            if (datetime.datetime.now().replace(microsecond=0) >= market_end_time):
-                print("The market has closed... ")
+        """ This logic of exiting works only for Single stock system"""
+        if CONFIG.trading_exchange == "MCX":
+            if (datetime.datetime.now().replace(microsecond=0) >= market_end_time and not CONFIG.SIMULATION_MODE):
+                print("Exitint supertrend thread as MCX market has closed.")
+                return
+
+        elif (CONFIG.trading_exchange == "NSE" or CONFIG.trading_exchange == "NFO"):
+            if (datetime.datetime.now().replace(microsecond=0) >= market_end_time and not CONFIG.SIMULATION_MODE):
+                print("Exitint supertrend thread as NSE/NFO market has closed.")
                 return
 
     return

@@ -314,7 +314,7 @@ def on_ticks(ticks):
                                                         tick_timestamp.minute % config.time_interval) - 1, 59)
 
 def create_tick(idx):
-    if idx > len(MKT_TICK):
+    if idx >= len(MKT_TICK)-1:
         print("No more ticks. Market has closed")
         LOG1.info("No more ticks. Market has closed")
         exit(0)
@@ -322,7 +322,7 @@ def create_tick(idx):
     on_ticks(MKT_TICK[idx])
 
 def main():
-    with open(config.STD_PATH+'configfiles/simulation-2018-06-07.091400.txt','r') as file:
+    with open(config.STD_PATH+'configfiles/simulation-crude-2018-07-12.100000.txt','r') as file:
         for line in file:
             out = re.search('(\d+)(\.)(\d+)', line)
             if out:
@@ -339,15 +339,21 @@ def simulator():
     LOG1.setLevel(logging.INFO)
     LOG1.addHandler(handler)
     main()
+
+    while (True):
+        tick_timestamp = datetime.datetime.now().replace(microsecond=0)
+        if (tick_timestamp.minute % config.time_interval == 0):
+            break
+
+    print("Market simulation started.")
+
     idx = 0
     create_tick(idx)
 
     market_end_time = datetime.datetime.now().replace(hour=config.CLOSE_HR, minute=config.CLOSE_MIN, second=0,
                                                       microsecond=0)
+
     while True:
-        if (datetime.datetime.now().replace(microsecond=0) >= market_end_time):
-            print("The market has closed... ")
-            return
         idx = idx + 1
         Timer(1, create_tick,[idx]).run()
     return

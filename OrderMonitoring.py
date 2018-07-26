@@ -20,6 +20,8 @@ class Orderm(object):
     classdocs
     '''
     LOG = None
+    global_order_list = None
+
     def __init__(self):
         '''
         Constructor
@@ -37,23 +39,44 @@ class Orderm(object):
         pass
 
     def pending_order_manager(self):
-        market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR, minute=CONFIG.CLOSE_MIN, second=0,
-                                                        microsecond=0)
+        while (True):
+            tick_timestamp = datetime.datetime.now().replace(microsecond=0)
+            if (tick_timestamp.minute % CONFIG.time_interval == 0):
+                break
+
+        if CONFIG.trading_exchange == "MCX":
+            market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR_COMMODITY,
+                                                              minute=CONFIG.CLOSE_MIN_COMMODITY, second=0,
+                                                              microsecond=0)
+
+        elif (CONFIG.trading_exchange == "NSE" or CONFIG.trading_exchange == "NFO"):
+            market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR, minute=CONFIG.CLOSE_MIN, second=0,
+                                                              microsecond=0)
 
         if (CONFIG.SIMULATION_MODE):
             self.LOG.info("Running in Simulation mode. It will monitor the simulated trades for profit/loss.")
 
 
         while True:
-            Timer(1, self.monitor, []).run()
+            Timer(CONFIG.TIMER_STD_VAL, self.monitor, []).run()
 
-            if (datetime.datetime.now().replace(microsecond=0) >= market_end_time):
-                print("The market has closed... ")
-                break
+            """ This logic of exiting works only for Single stock system"""
+            if CONFIG.trading_exchange == "MCX":
+                if (datetime.datetime.now().replace(microsecond=0) >= market_end_time and not CONFIG.SIMULATION_MODE):
+                    print("Exiting Order monitoring thread as MCX market has closed.")
+                    return
+
+            elif (CONFIG.trading_exchange == "NSE" or CONFIG.trading_exchange == "NFO"):
+                if (datetime.datetime.now().replace(microsecond=0) >= market_end_time and not CONFIG.SIMULATION_MODE):
+                    print("Exiting Order monitoring thread as NSE/NFO market has closed.")
+                    return
+
 
     def monitor(self):
-
-        if (CONFIG.SIMULATION_MODE):
+        if (not CONFIG.SIMULATION_MODE) and CONFIG.MARKET_LTP!=None:
+            self.monitor_cover_order()
+            return
+        else:
             self.monitor_simulation()
             return
 
@@ -136,27 +159,140 @@ class Orderm(object):
                 stoploss = order['price'] - order['stoploss']
                 if CONFIG.MARKET_LTP >= target_price:
                     CONFIG.OPEN_ORDERS.pop(cur_idx)
-                    self.LOG.info("Target achieved. Order_id=%s, mkt_ltp=%f, price=%f, target=%f",
-                                  order["order_id"], CONFIG.MARKET_LTP, order['price'], order['squareoff'])
+                    self.LOG.info("Target achieved. Order_id=%s, mkt_ltp=%f, price=%f, target=%f type=%s",
+                                  order["order_id"], CONFIG.MARKET_LTP, order['price'], order['squareoff'],
+                                  order["transaction_type"])
 
                 elif CONFIG.MARKET_LTP <= stoploss:
                     CONFIG.OPEN_ORDERS.pop(cur_idx)
-                    self.LOG.error("Stoploss hit. Order_id=%s, mkt_ltp=%f, price=%f, target=%f",
-                                   order["order_id"], CONFIG.MARKET_LTP, order['price'], order['squareoff'])
+                    self.LOG.error("Stoploss hit. Order_id=%s, mkt_ltp=%f, price=%f, target=%f, stoploss=%f, type=%s",
+                                   order["order_id"], CONFIG.MARKET_LTP, order['price'], order['squareoff'],
+                                   order['stoploss'], order["transaction_type"])
 
             elif order["transaction_type"] == "SELL":
                 target_price = order['price'] - order['squareoff']
                 stoploss = order['price'] + order['stoploss']
                 if CONFIG.MARKET_LTP <= target_price:
                     CONFIG.OPEN_ORDERS.pop(cur_idx)
-                    self.LOG.info("Target achieved. Order_id=%s, mkt_ltp=%f, price=%f, target=%f",
-                                  order["order_id"], CONFIG.MARKET_LTP, order['price'], order['squareoff'])
+                    self.LOG.info("Target achieved. Order_id=%s, mkt_ltp=%f, price=%f, target=%f, type=%s",
+                                  order["order_id"], CONFIG.MARKET_LTP, order['price'], order['squareoff'],
+                                  order["transaction_type"])
 
                 elif CONFIG.MARKET_LTP >= stoploss:
                     CONFIG.OPEN_ORDERS.pop(cur_idx)
-                    self.LOG.error("Stoploss hit. Order_id=%s, mkt_ltp=%f, price=%f, target=%f",
-                                   order["order_id"], CONFIG.MARKET_LTP, order['price'], order['squareoff'])
+                    self.LOG.error("Stoploss hit. Order_id=%s, mkt_ltp=%f, price=%f, target=%f, stoploss=%f, type=%s",
+                                   order["order_id"], CONFIG.MARKET_LTP, order['price'], order['squareoff'],
+                                   order['stoploss'], order["transaction_type"])
+
+        pres_time = datetime.datetime.now().replace(second=0, microsecond=0)
+        if CONFIG.CLOSE_HR < 6 and pres_time.hour>17:
+            pass
+        elif ( pres_time>=datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR, minute=CONFIG.CLOSE_MIN ,second=0, microsecond=0)):
+            for cur_idx in list(CONFIG.OPEN_ORDERS):
+                order = CONFIG.OPEN_ORDERS.get(cur_idx)
+
+                if order["transaction_type"] == "BUY":
+                    self.LOG.info("Call&Execute. Type=%s, Order_id=%s, mkt_ltp=%f, price=%f, losspoints=%f",
+                        order["transaction_type"], order["order_id"], CONFIG.MARKET_LTP, order['price'],
+                                  CONFIG.MARKET_LTP - order['price'])
+
+                elif order["transaction_type"] == "SELL":
+                    self.LOG.info("Call&Execute. Type=%s, Order_id=%s, mkt_ltp=%f, price=%f, losspoints=%f",
+                        order["transaction_type"], order["order_id"], CONFIG.MARKET_LTP, order['price'],
+                                order['price'] - CONFIG.MARKET_LTP)
+
+        return
+
+    def access_all_orders(self):
+        requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':ECDHE-RSA-AES256-GCM-SHA384'
+        url = 'https://api.kite.trade/orders/'
+        var = "token " + CONFIG.API_KEY + ":" + CONFIG.ACCESS_TOKEN
+        headers = {
+            "X-Kite-Version": '3',
+            "Authorization": var
+        }
+        try:
+            response = requests.get(url, headers=headers)
+            self.global_order_list = json.loads(response.text)
+
+        except Exception as e:
+            self.LOG.error("Exception occured while retrieving the orders. Please check the connectivity..")
+            self.LOG.error("Exception at ordermonitoring:", str(e))
+            return
+
+        return
+
+    def monitor_cover_order(self):
+        self.access_all_orders()
+        self.ready_2_exit_co()
+        return
 
 
+    def ready_2_exit_co(self):
+        if (self.global_order_list) and (self.global_order_list['status'] =='success'):
+            for x in self.global_order_list['data']:
+                if x['parent_order_id'] in list(CONFIG.OPEN_COVER_ORDERS.keys()) and \
+                        (x['status'] == 'TRIGGER PENDING'):
+                    parent_order = CONFIG.OPEN_COVER_ORDERS.get(x['parent_order_id'])
+                    if parent_order['transaction_type'] == "BUY":
+                        target_price = parent_order['price'] + parent_order['squareoff']
+                        stoploss = parent_order['price'] - parent_order['stoploss']
+                        if CONFIG.MARKET_LTP >= target_price:
+                            self.exit_cover_order(x, parent_order)
+
+                        elif CONFIG.MARKET_LTP <= stoploss:
+                            self.LOG.error(
+                                "Stoploss hit. Order_id=%s, mkt_ltp=%f, price=%f, target=%f, stoploss=%f, type=%s",
+                                x['parent_order_id'], CONFIG.MARKET_LTP, parent_order['price'], parent_order['squareoff'],
+                                parent_order['stoploss'], parent_order["transaction_type"])
+                            CONFIG.OPEN_COVER_ORDERS.pop(x['parent_order_id'])
+
+                    elif parent_order['transaction_type'] == "SELL":
+                        target_price = parent_order['price'] - parent_order['squareoff']
+                        stoploss = parent_order['price'] + parent_order['stoploss']
+                        if CONFIG.MARKET_LTP <= target_price:
+                            self.exit_cover_order(x, parent_order)
+
+                        elif CONFIG.MARKET_LTP >= stoploss:
+                            self.LOG.error(
+                                "Stoploss hit. Order_id=%s, mkt_ltp=%f, price=%f, target=%f, stoploss=%f, type=%s",
+                                x['parent_order_id'], CONFIG.MARKET_LTP, parent_order['price'], parent_order['squareoff'],
+                                parent_order['stoploss'], parent_order["transaction_type"])
+                            CONFIG.OPEN_COVER_ORDERS.pop(x['parent_order_id'])
+
+        else:
+            self.LOG.error("Retrieved global order list was either Nill or status was non success")
+
+        return
+
+
+    def exit_cover_order(self, pending_order, parent_order):
+        requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':ECDHE-RSA-AES256-GCM-SHA384'
+        url = "https://api.kite.trade/orders/co/"+pending_order['order_id']
+        var = "token " + CONFIG.API_KEY + ":" + CONFIG.ACCESS_TOKEN
+        headers = {
+            "X-Kite-Version": '3',
+            "Authorization": var
+        }
+
+        try:
+            response = requests.delete(url, headers=headers)
+            json_data = json.loads(response.text)
+            if json_data['status'] == 'success':
+                self.LOG.info("Order id:%s exited successfully.",  pending_order['order_id'])
+                self.LOG.info(json_data)
+                CONFIG.OPEN_COVER_ORDERS.pop(pending_order['parent_order_id'])
+                self.LOG.info("Target achieved for Order_id=%s, mkt_ltp=%f, price=%f, target=%f type=%s",
+                              pending_order['parent_order_id'], CONFIG.MARKET_LTP,
+                              parent_order['price'], parent_order['squareoff'],
+                              parent_order["transaction_type"])
+            else:
+                self.LOG.error(" Exiting the order:%s Failed...", pending_order['order_id'])
+                self.LOG.error(json_data)
+
+        except Exception as e:
+            self.LOG.error("Exception occured while retrieving the orders. Please check the connectivity..")
+            self.LOG.error("Exception at ordermonitoring:", str(e))
+            return
 
         return

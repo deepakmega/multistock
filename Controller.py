@@ -27,7 +27,7 @@ class Controller(object):
         return
 
     """
-    The controller object is run every second.
+    The controller object will run every second.
     """
     def init__controller(self):
         """

@@ -15,18 +15,18 @@ Standard Constants
 STD_PATH = ""
 SYSTEM_CLOSE_HR = 23
 SYSTEM_CLOSE_MIN = 45
+SYSTEM_STARTED_TIME = None
 GlobalInstObj = None
-
-"""
-Multistock constants
-"""
-MULTISTOCK = {}
+TIMER_STD_VAL = 1 #1 second default value
+OPEN_COVER_ORDERS = {}
 
 """
 Simulation Constants
 """
 SIMULATION_MODE = False
 OPEN_ORDERS = {}
+SIMULATION_START_HR = None
+SIMULATION_START_MIN = None
 
 '''
 NIFTY, NSE, NFO constants
@@ -36,6 +36,15 @@ OPEN_MIN = 15
 
 CLOSE_HR = 15
 CLOSE_MIN = 30
+
+"""
+Commodity Exchange timings
+"""
+OPEN_HR_COMMODITY = 10
+OPEN_MIN_COMMODITY = 1
+
+CLOSE_HR_COMMODITY = 23
+CLOSE_MIN_COMMODITY = 30
 
 '''
 Check to execute Simple Moving average only once
@@ -81,7 +90,7 @@ RSI Constants
 RSI = {}
 RSI_PERIOD = 5
 RSI_OVERBOUGHT = 95.0
-RSI_OVERSOLD = 10.0
+RSI_OVERSOLD = 5.0
 '''
 Number of lots for trading
 '''
@@ -122,7 +131,7 @@ def init():
     time_interval_secondary = Time interval for collecting ticks required for calculating secondary candle OHLC
     """
     global tick , ORDER_MANAGER , OrderCancelDeadline , time_interval, tick_secondary , time_interval_secondary
-    global KITE, MARKET_LTP, CRUDE_PIP, NIFTY_PIP, PIP, NIFTY_PROFIT_MARGIN, NIFTY_EXPECTED_ATR
+    global KITE, MARKET_LTP, CRUDE_PIP, NIFTY_PIP, PIP, NIFTY_PROFIT_MARGIN, NIFTY_EXPECTED_ATR, COMMODITY_PROFIT_MARGIN
     global save2file_flag
     global ohlc_data, plotted
     global SMA_5PERIOD_VALUE, SMA_34PERIOD_VALUE, SMA_1PERIOD_VALUE, SMA_14PERIOD_VALUE
@@ -136,7 +145,8 @@ def init():
     SMA_14PERIOD_VALUE = None
     CRUDE_PIP = 1.0
     NIFTY_PIP = 3.0
-    NIFTY_PROFIT_MARGIN = 8.0
+    NIFTY_PROFIT_MARGIN = 12.0
+    COMMODITY_PROFIT_MARGIN = 8
     NIFTY_EXPECTED_ATR = 5.0
     PIP = None
 
@@ -145,7 +155,7 @@ def init():
     tick_secondary = {}
     ORDER_MANAGER= {}
     OrderCancelDeadline = 5
-    time_interval = 15 #Default time interval for all stocks
+    time_interval = 15  #default time interval=15min
     time_interval_secondary = 60
 
 
@@ -179,7 +189,7 @@ def init():
     global trading_symbol, trading_exchange , trading_order_type, trading_product , order_variety , trading_quantity
 
     #Possible values for trading symbol are symbols for the scripts you want to buy or sell . You can get it by retrieving instruments
-    trading_symbol = "NIFTY18JUNFUT" #"NIFTY50"#"CRUDEOIL18APRFUT"
+    trading_symbol = "CRUDEOILM18AUGFUT" #"NIFTY18JULFUT" #"NIFTY50"#"CRUDEOIL18APRFUT"
 
     #Possible values for trading_exchange are "NSE", "BSE", "NFO",  "CDS",  "MCX"
     trading_exchange = "NFO"
@@ -194,4 +204,4 @@ def init():
     order_variety = "BO"
 
     #number of shares to buy trading_quantity
-    trading_quantity = 75
+    trading_quantity = 1

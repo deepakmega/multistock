@@ -116,6 +116,11 @@ class GlobalInst(object):
         like kite feeder.
         """
         if CONFIG.SIMULATION_MODE:
+            CONFIG.SIMULATION_START_HR = datetime.datetime.now().time().hour
+            CONFIG.SIMULATION_START_MIN = datetime.datetime.now().time().minute
+            if CONFIG.SIMULATION_START_HR > 17:
+                CONFIG.CLOSE_HR = 6 - (24-CONFIG.SIMULATION_START_HR)
+
             self.simulation = Thread(target=simulator())
             self.simulation.start()
         else:

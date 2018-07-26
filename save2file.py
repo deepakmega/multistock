@@ -52,8 +52,8 @@ def save2file():
             temp_AVG_TRUE_RANGE[dict_key] = CONFIG.AVG_TRUE_RANGE.get(dict_key)
             temp_SUPERTREND[dict_key] = CONFIG.SUPERTREND.get(dict_key)
             temp_SUPERTREND_TREND[dict_key] = CONFIG.SUPERTREND_TREND.get(dict_key)
-            temp_RSI = CONFIG.RSI.get(dict_key)
-            temp_LINEAR_REGRESSION = CONFIG.LINEAR_REGRESSION.get(dict_key)
+            temp_RSI[dict_key] = CONFIG.RSI.get(dict_key)
+            temp_LINEAR_REGRESSION[dict_key] = CONFIG.LINEAR_REGRESSION.get(dict_key)
             #temp_SMA_5PERIOD_VALUE[dict_key] = CONFIG.SMA_5PERIOD_VALUE.get(dict_key)
             #temp_SMA_34PERIOD_VALUE[dict_key] = CONFIG.SMA_34PERIOD_VALUE.get(dict_key)
             #temp_SMA_1PERIOD_VALUE[dict_key] = CONFIG.SMA_1PERIOD_VALUE.get(dict_key)
@@ -152,7 +152,7 @@ def parsetickdata(tick):
 
     i = 1
     final_tick = {}
-    while (i <= no_of_candles):
+    while (i < no_of_candles):
         if (i == 1):
             final_tick[str(currenttime)] = temp_tick[str(basecandle)]
         else:

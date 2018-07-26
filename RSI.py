@@ -56,14 +56,31 @@ class RSI_calculator(object):
 
 
 def main():
-    obj = RSI_calculator()
-    market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR, minute=CONFIG.CLOSE_MIN, second=0,
-                                                      microsecond=0)
-    while True:
-        Timer(1, obj.rsi_calculate,[CONFIG.RSI_PERIOD]).run()
+    while (True):
+        tick_timestamp = datetime.datetime.now().replace(microsecond=0)
+        if (tick_timestamp.minute % CONFIG.time_interval == 0):
+            break
 
-        if (datetime.datetime.now().replace(microsecond=0) >= market_end_time):
-            print("The market has closed... ")
-            return
+    obj = RSI_calculator()
+
+    if CONFIG.trading_exchange == "NSE" or CONFIG.trading_exchange == "NFO":
+        market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR, minute=CONFIG.CLOSE_MIN, second=0,
+                                                          microsecond=0)
+    elif CONFIG.trading_exchange == "MCX":
+        market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR_COMMODITY,
+                                                          minute=CONFIG.CLOSE_MIN_COMMODITY, second=0,
+                                                          microsecond=0)
+    while True:
+        Timer(CONFIG.TIMER_STD_VAL, obj.rsi_calculate,[CONFIG.RSI_PERIOD]).run()
+
+        if CONFIG.trading_exchange == "NSE" or CONFIG.trading_exchange == "NFO":
+            if (datetime.datetime.now().replace(microsecond=0) >= market_end_time and not CONFIG.SIMULATION_MODE):
+                print("Exiting RSI thread as NSE/NFO market has closed now ")
+                return
+
+        elif CONFIG.trading_exchange == "MCX":
+            if (datetime.datetime.now().replace(microsecond=0) >= market_end_time and not CONFIG.SIMULATION_MODE):
+                print("Exiting RSI thread as MCX market has closed now ")
+                return
 
     return
