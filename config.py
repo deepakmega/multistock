@@ -94,7 +94,7 @@ SELL_PRICE = {}
 '''
 Trading Instrument
 '''
-TRADE_INSTRUMENT = [12393218, 12399106, 12490498, 12531970, 12374274, 10154498 , 12377090, 12396034 , 12494082, 12492290]
+TRADE_INSTRUMENT = [1510401, 2953217, 408065, 4267265, 340481]
 
 
 def PRICE_FORMAT(price):
@@ -145,7 +145,7 @@ def init():
     tick_secondary = {}
     ORDER_MANAGER= {}
     OrderCancelDeadline = 5
-    time_interval = 5
+    time_interval = 15 #Default time interval for all stocks
     time_interval_secondary = 60
 
 

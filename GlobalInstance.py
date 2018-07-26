@@ -83,6 +83,13 @@ class GlobalInst(object):
         controller = Controller()
         controller.init__controller()
         controller.import_from_storage()
+        CONFIG.tick = {}
+        CONFIG.TRUE_RANGE = {}
+        CONFIG.AVG_TRUE_RANGE = {}
+        CONFIG.SUPERTREND_TREND = {}
+        CONFIG.RSI = {}
+        CONFIG.LINEAR_REGRESSION = {}
+        CONFIG.SUPERTREND = {}
         print("True range:", CONFIG.TRUE_RANGE)
         print("Avg True Range:", CONFIG.AVG_TRUE_RANGE)
         print("Supertrend", CONFIG.SUPERTREND)
@@ -94,6 +101,8 @@ class GlobalInst(object):
         print("Starting the system at a proper whole time...")
         while (datetime.datetime.now().time().second%60) != 0:
             pass
+
+        CONFIG.SYSTEM_STARTED_TIME = datetime.datetime.now().replace(second=0, microsecond=0)
 
         self.MktAnalyzer()
 
@@ -113,7 +122,8 @@ class GlobalInst(object):
             self.fetcherThread = Thread(target=DataFetcher.main())
             self.fetcherThread.start()
 
-        self.exit_system()
+        if not CONFIG.SIMULATION_MODE:
+            self.exit_system()
 
         return
 

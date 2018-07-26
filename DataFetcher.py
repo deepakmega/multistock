@@ -59,6 +59,10 @@ def on_ticks(ws, ticks):
                     if(tick_timestamp.minute % config.time_interval !=0):
                         return
 
+                    if tick_timestamp < config.SYSTEM_STARTED_TIME:
+                        LOG[eachscript['instrument_token']].error("Found some spurious ticks. Waitting for correct start of time.")
+                        return
+
                     temp_tick[eachscript['instrument_token']].append(tick_price)
                     open = temp_tick[eachscript['instrument_token']][0]
                     close = temp_tick[eachscript['instrument_token']][len(temp_tick[eachscript['instrument_token']]) - 1]
@@ -129,6 +133,12 @@ def on_ticks(ws, ticks):
 
                     ohlc = [open, high, low, close]
                     dict_key[eachscript['instrument_token']] = str(tick_timestamp.replace(second=0, microsecond=0))
+                    if (tick_timestamp.minute % config.time_interval != 0):  # A case when socket disconnection happens
+                        cur_min = tick_timestamp.minute - (tick_timestamp.minute % config.time_interval)
+                        cur_mkt_idx = tick_timestamp.replace(minute=cur_min, second=0, microsecond=0)
+                        tick_timestamp = cur_mkt_idx
+                        dict_key[eachscript['instrument_token']] = str(cur_mkt_idx)
+
                     local_tick_dict[dict_key[eachscript['instrument_token']]] = ohlc
                     config.MULTISTOCK[eachscript['instrument_token']]['ticks'].update(local_tick_dict)
                     LOG[eachscript['instrument_token']].info("Primary candle:interval=%d ,ohlc=%s, ltp=%f", config.time_interval,
