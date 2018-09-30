@@ -10,13 +10,13 @@ def main():
     count =0
     fileData = ""
     timestr = time.strftime("%Y-%m-%d.%H%M%S")
-    timestr = "crude-2018-07-12.100000"
+    timestr = "738561-2018-08-10.094559"
     fhand_writer = open(CONFIG.STD_PATH + "configfiles/simulation-"+timestr+".txt", "a")
-    with open(CONFIG.STD_PATH+"../DataFetcher-crude-2018-07-12.100000.log",'r') as file:
+    with open(CONFIG.STD_PATH+"../Reliance/DataFetcher-738561-2018-08-10.094559.log",'r') as file:
         for line in file:
             out = re.search('ltp=(\d+)(\.)(\d+)', line)
             if out:
-                if count < 1000000:
+                if count < 25000:
                     print(out.group(0))
                     count = count + 1
                     fhand_writer.write(str(out.group(0)))
