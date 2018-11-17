@@ -24,6 +24,7 @@ import numpy as np
 import talib
 from talib import MA_Type
 import requests
+import lxml.html as lh
 import pandas as pd
 import bs4
 from bs4 import BeautifulSoup
@@ -63,17 +64,31 @@ class Option_Chain:
                 page = requests.get(url)
                 if page:
                     break
-            except:
-                print("Exception: Failed to fetch the html page at url:", url)
+            except Exception as e:
+                self.LOG.error("%s - Exception: Failed to fetch the html page at url:", symbol, url)
+                self.LOG.error("\n%s\n", str(e))
                 continue
 
-        soup = BeautifulSoup(page.content, 'html.parser')
+        if re.search("No contracts traded today", page.text):
+            self.LOG.error("%s - No Option Chain data available from webpage",symbol)
+            CONFIG.MULTISTOCK[symbol]['Option_chain']= pd.DataFrame(0, index=range(0,3),
+                                                                    columns=['Call-OI','Call-chngInOi','Call-Vol',
+                                                                             'Strike','Put-Vol','Put-chngInOi',
+                                                                             'Put-OI','Direction'])
+            return -1
 
-        ltp = soup.select('span b')
-        symbol_ltp = float(re.sub("[^0-9.]", "", ltp[0].get_text()))
+        try:
+            soup = BeautifulSoup(page.content, 'html.parser')
 
-        main_table = soup.find_all(class_="opttbldata")
-        tbl_cls_1 = soup.find_all(id="octable")
+            ltp = soup.select('span b')
+            symbol_ltp = float(re.sub("[^0-9.]", "", ltp[0].get_text()))
+
+            main_table = soup.find_all(class_="opttbldata")
+            tbl_cls_1 = soup.find_all(id="octable")
+        except Exception as e:
+            self.LOG.error("%s - Exception at parsing html using beautifulsoup", symbol)
+            self.LOG.error("\n%s\n", str(e))
+            return
 
         col_list = []
 
@@ -100,25 +115,31 @@ class Option_Chain:
 
         row_marker = 0
 
-        for row_number, tr_nos in enumerate(req_row):
-            # to enusure we use only rows with values
-            if row_number <= 1 or row_number == len(req_row) - 1:
-                continue
-
-            td_columns = tr_nos.find_all('td')
-
-            # this removes the graphs columns
-            select_cols = td_columns[1:len(col_list_fnl) + 1]
-            cols_horizontal = range(0, len(select_cols))
-
-            for nu, column in enumerate(select_cols):
-                str = column.get_text()
-                str = str.strip('\n\r\t": ')
-                tr = str.replace(',', '')
-                if str in ['-']:
+        try:
+            for row_number, tr_nos in enumerate(req_row):
+                # to enusure we use only rows with values
+                if row_number <= 1 or row_number == len(req_row) - 1:
                     continue
-                new_table.iloc[row_marker, [nu]] = tr
-            row_marker += 1
+
+                td_columns = tr_nos.find_all('td')
+
+                # this removes the graphs columns
+                select_cols = td_columns[1:len(col_list_fnl) + 1]
+                cols_horizontal = range(0, len(select_cols))
+
+                for nu, column in enumerate(select_cols):
+                    str = column.get_text()
+                    str = str.strip('\n\r\t": ')
+                    tr = str.replace(',', '')
+                    if str in ['-']:
+                        continue
+                    new_table.iloc[row_marker, [nu]] = tr
+                row_marker += 1
+
+        except Exception as e:
+            self.LOG.error("%s - Exception during table processing.", symbol)
+            self.LOG.error("\n%s\n", str(e))
+            return -1
 
         Option_chain = (new_table)
 
@@ -127,57 +148,58 @@ class Option_Chain:
             self.LOG.error("Option Chain for symbol=%s is empty!", symbol)
             return
 
-        strike_diff = float(Option_chain['Strike Price'].get(1)) - float(Option_chain['Strike Price'].get(0))
+        try:
+            strike_diff = float(Option_chain['Strike Price'].get(1)) - float(Option_chain['Strike Price'].get(0))
 
-        Option_chain.drop(['IV', 'LTP', 'Net Chng', 'BidQty', 'BidPrice', 'AskPrice', 'AskQty'], axis=1, inplace=True)
+            Option_chain.drop(['IV', 'LTP', 'Net Chng', 'BidQty', 'BidPrice', 'AskPrice', 'AskQty'], axis=1, inplace=True)
 
-        Option_chain = Option_chain.fillna(0)
+            Option_chain = Option_chain.fillna(0)
 
-        Option_chain.columns = ['Call-OI', 'Call-chngInOi', 'Call-Vol', 'Strike',
-                                'Put-Vol', 'Put-chngInOi', 'Put-OI']
+            Option_chain.columns = ['Call-OI', 'Call-chngInOi', 'Call-Vol', 'Strike',
+                                    'Put-Vol', 'Put-chngInOi', 'Put-OI']
 
-        Option_chain = Option_chain.apply(pd.to_numeric, errors='coerce')
+            Option_chain = Option_chain.apply(pd.to_numeric, errors='coerce')
 
-        Option_chain_main = (Option_chain)
+            Option_chain_main = (Option_chain)
 
-        opt_chain = pd.DataFrame(index=range(0, len(req_row) - 3),
-                                 columns=["Call-OI-today", "Strike", "Put-OI-today", "PCR"])
-        opt_chain["Total-call"] = Option_chain["Call-OI"] + Option_chain["Call-chngInOi"]
-        opt_chain["Total-put"] = Option_chain["Put-OI"] + Option_chain["Put-chngInOi"]
-        opt_chain["Strike"] = Option_chain["Strike"]
-        Option_chain["PCR"] = ((opt_chain["Total-put"]) / (opt_chain["Total-call"]))
-        Option_chain["CPR"] = ((opt_chain["Total-call"]) / (opt_chain["Total-put"]))
+            opt_chain = pd.DataFrame(index=range(0, len(req_row) - 3),
+                                     columns=["Call-OI-today", "Strike", "Put-OI-today", "PCR"])
+            opt_chain["Total-call"] = Option_chain["Call-OI"] + Option_chain["Call-chngInOi"]
+            opt_chain["Total-put"] = Option_chain["Put-OI"] + Option_chain["Put-chngInOi"]
+            opt_chain["Strike"] = Option_chain["Strike"]
+            Option_chain["PCR"] = ((opt_chain["Total-put"]) / (opt_chain["Total-call"]))
+            Option_chain["CPR"] = ((opt_chain["Total-call"]) / (opt_chain["Total-put"]))
 
-        m_sup_idx = Option_chain['Put-OI'].idxmax()
-        m_res_idx = Option_chain['Call-OI'].idxmax()
-        d_sup_idx = Option_chain['Put-chngInOi'].idxmax()
-        d_res_idx = Option_chain['Call-chngInOi'].idxmax()
+            m_sup_idx = Option_chain['Put-OI'].idxmax()
+            m_res_idx = Option_chain['Call-OI'].idxmax()
+            d_sup_idx = Option_chain['Put-chngInOi'].idxmax()
+            d_res_idx = Option_chain['Call-chngInOi'].idxmax()
 
-        cur_strike = (int(int(symbol_ltp) / int(strike_diff)) * float(strike_diff))
-        prev_strike = ((int(int(symbol_ltp) / int(strike_diff)) - 1) * float(strike_diff))
-        next_strike = ((int(int(symbol_ltp) / int(strike_diff)) + 1) * float(strike_diff))
+            cur_strike = (int(int(symbol_ltp) / int(strike_diff)) * float(strike_diff))
+            prev_strike = ((int(int(symbol_ltp) / int(strike_diff)) - 1) * float(strike_diff))
+            next_strike = ((int(int(symbol_ltp) / int(strike_diff)) + 1) * float(strike_diff))
 
-        Option_chain = Option_chain.loc[Option_chain["Strike"].isin([prev_strike, cur_strike, next_strike])]
+            Option_chain = Option_chain.loc[Option_chain["Strike"].isin([prev_strike, cur_strike, next_strike])]
 
-        prev_strike_idx = Option_chain[Option_chain["Strike"] == prev_strike].index.values.astype(int)[0]
-        cur_strike_idx = Option_chain[Option_chain["Strike"] == cur_strike].index.values.astype(int)[0]
-        next_strike_idx = Option_chain[Option_chain["Strike"] == next_strike].index.values.astype(int)[0]
+            prev_strike_idx = Option_chain[Option_chain["Strike"] == prev_strike].index.values.astype(int)[0]
+            cur_strike_idx = Option_chain[Option_chain["Strike"] == cur_strike].index.values.astype(int)[0]
+            next_strike_idx = Option_chain[Option_chain["Strike"] == next_strike].index.values.astype(int)[0]
 
 
-        Option_chain = Option_chain.assign(Direction="")
-        for i in [prev_strike_idx, cur_strike_idx, next_strike_idx]:
-            if (Option_chain.at[i, "Put-chngInOi"] > Option_chain.at[i, "Call-chngInOi"]):
-                Option_chain.loc[i, "Direction"] = "UP"
-            else:
-                Option_chain.loc[i, "Direction"] = "DOWN"
-        
+            Option_chain = Option_chain.assign(Direction="")
+            for i in [prev_strike_idx, cur_strike_idx, next_strike_idx]:
+                if (Option_chain.at[i, "Put-chngInOi"] > Option_chain.at[i, "Call-chngInOi"]):
+                    Option_chain.loc[i, "Direction"] = "UP"
+                else:
+                    Option_chain.loc[i, "Direction"] = "DOWN"
 
-        if Option_chain.empty:
-            self.LOG.error("%s - Option is empty.")
+            CONFIG.MULTISTOCK[symbol]['Option_chain'] = Option_chain
+            #self.LOG.info("\n%s\n", CONFIG.MULTISTOCK[symbol]['Option_chain'])
+
+        except Exception as e:
+            self.LOG.error("%s - Exception during Dataframe processing.")
+            self.LOG.error("\n%s\n", str(e))
             return -1
-
-        CONFIG.MULTISTOCK[symbol]['Option_chain'] = Option_chain
-        #self.LOG.info("\n%s\n", CONFIG.MULTISTOCK[symbol]['Option_chain'])
 
         return
 

@@ -32,11 +32,19 @@ CLOSE = 3
 credentials_dict = json.load(open(STD_PATH+"configfiles/credentials_upstox.txt"))
 
 #######################################################################################################################
-TRADE_INSTRUMENT = ["RELIANCE", "RELINFRA", "INFY", "ICICIBANK", "AXISBANK", "AUROPHARMA",
-                  "MARUTI", "INDUSINDBK", "HEROMOTOCO", 'LUPIN', "ULTRACEMCO", "BAJAJFINSV",
-                  "HDFC", "ASIANPAINT", "BAJAJ-AUTO", "IBULHSGFIN", "LT", "UPL", "KOTAKBANK",
-                  "HDFCBANK", "HINDUNILVR", "TITAN", "GRASIM", "HCLTECH", "TCS", "BAJFINANCE",
-                  "CIPLA", "DRREDDY", "TECHM", "BATAINDIA"]
+TRADE_INSTRUMENT = ["RELIANCE", "RELINFRA", "INFY", "ICICIBANK", "AXISBANK", "AUROPHARMA","BANDHANBNK", "PEL", "SUNTV",
+                  "MARUTI", "INDUSINDBK", "HEROMOTOCO", 'LUPIN', "ULTRACEMCO", "BAJAJFINSV","ABB", "BRITANNIA", "OFSS",
+                  "HDFC", "ASIANPAINT", "BAJAJ-AUTO", "IBULHSGFIN", "LT", "UPL", "KOTAKBANK","COLPAL","DABUR","MARICO",
+                  "HDFCBANK", "HINDUNILVR", "TITAN", "GRASIM", "HCLTECH", "TCS", "BAJFINANCE","PIDILITIND",
+                  "CIPLA", "DRREDDY", "TECHM", "BATAINDIA", "MINDTREE", "ZEEL","TATASTEEL", "SIEMENS","INDIGO",
+                  "GODREJCP", "ICICIGI", "SBILIFE", "BIOCON", "ACC", "CONCOR", "HAVELLS", "SRTRANSFIN", "LICHSGFIN",
+                  "CANBK","AJANTPHARM","DIVISLAB", "RBLBANK", "GODREJIND", "TATACHEM", "BHARATFORG","UBL", "CENTURYTEX",
+                  "VOLTAS","TVSMOTOR","JUBLFOOD","AMARAJABAT","SRF","TORNTPHARM","MUTHOOTFIN","RAMCOCEM",
+                  "APOLLOHOSP","CUMMINSIND","GLENMARK","CHOLAFIN","BHARATFIN","NIITTECH","TATAELXSI","PVR","APLAPOLLO",
+                  "SUNPHARMA","SOBHA","GODREJPROP","BHARTIARTL","MPHASIS","WHIRLPOOL","CRISIL","GLAXO","COLPAL","PFIZER",
+                  "GSKCONS","KANSAINER","SANOFI","HEXAWARE","SBIN","YESBANK","DHFL","MGL","GAIL","ADANIPORTS","ESCORTS",
+                  "HEG","GNFC","GRUH","BBTC","LTI","CYIENT","NAUKRI","GRAPHITE","IBVENTURES","DBL","VIPIND","ARVIND",
+                  "RAYMOND","DALMIABHA","CESC","WOCKPHARMA","CAPF","MFSL","GODFRYPHLP","JUSTDIAL","BEML"]
 #######################################################################################################################
 
 

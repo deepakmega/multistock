@@ -71,6 +71,14 @@ class GlobalInst(object):
 
         CONFIG.SYSTEM_STARTED_TIME = datetime.datetime.now().replace(second=0, microsecond=0)
 
+        fetcherThread = Thread(target=DataFetcher.main)
+        fetcherThread.start()
+
+        """
+        Unsubscription and subscription of stocks takes significant amount of time.
+        """
+        time.sleep(120)
+
         historical_data = Thread(target=Historical_Data_Mgmt.main)
         historical_data.start()
 
@@ -82,9 +90,6 @@ class GlobalInst(object):
 
         bollinger_band = Thread(target=BollingerBand.main)
         bollinger_band.start()
-
-        fetcherThread = Thread(target=DataFetcher.main)
-        fetcherThread.start()
 
         return
 

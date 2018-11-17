@@ -192,7 +192,6 @@ class SMA_:
                                   CONFIG.MULTISTOCK[stock]['DataFrame'],
                                   CONFIG.MULTISTOCK[stock]['Option_chain'])
 
-
                 except Exception as e:
                     print("Exception occured during SMA calculation for stock:", stock)
                     self.LOG.error("\n%s\n",str(e))
