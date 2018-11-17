@@ -182,8 +182,8 @@ def graphData(ma1 , ma2):
 
         # linear regression
         if len(config.ohlc_data) > 5 :
-            print("lr_x:", lr_x)
-            print("lr_y:", lr_y)
+            #print("lr_x:", lr_x)
+            #print("lr_y:", lr_y)
             ax1.plot(lr_x, lr_y, color='black', label='middle')
 
         '''
@@ -213,8 +213,8 @@ def graphData(ma1 , ma2):
 
         #plot supertrend
         if len(config.ohlc_data) > 1:
-            print("supertrend_x:", supertrend_x)
-            print("supertrend_y:", supertrend_y)
+            #print("supertrend_x:", supertrend_x)
+            #print("supertrend_y:", supertrend_y)
             ax1.plot(supertrend_x, supertrend_y, color='green', label='middle')
 
         plt.subplots_adjust(left=.05, bottom=.05, right=.98, top=.97)
@@ -224,7 +224,7 @@ def graphData(ma1 , ma2):
 fig = plt.figure(facecolor='white')
 
 def animate(i):
-    graphData(21,34)
+    graphData(10,34)
 
 def main():
     config.init()

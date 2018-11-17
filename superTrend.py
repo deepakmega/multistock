@@ -16,6 +16,9 @@ from threading import Timer
 import logging
 import math
 import os
+import multiprocessing
+from multiprocessing import Process
+from threading import Thread
 
 
 class SuperTrend():
@@ -45,12 +48,20 @@ class SuperTrend():
 
     SUPERTREND = IF(Current Close <= Current FINAL UPPERBAND ) THEN Current FINAL UPPERBAND ELSE Current  FINAL LOWERBAND
     """
+    """Multi stock Data"""
+    LOG = {}
+    stock_id = None
 
     """
     We have data in the format of prices [High, Low, Close]
     """
-    LOG = None
-    TREND = {}
+
+    TICK_M = {}
+    TREND_M = {}
+    TR_M = {}
+    ATR_M = {}
+    SUPERTREND_M = {}
+
     temp_avg = {}
 
     true_range = []
@@ -78,21 +89,29 @@ class SuperTrend():
     mutex_lock = False
     prev_supertrend_list = {}
 
-    def __init__(self):
-        self.tick_1min = CONFIG.tick
+    def __init__(self, instrument_id):
+        self.stock_id = instrument_id
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         timestr = time.strftime("%Y-%m-%d.%H%M%S")
-        handler = logging.FileHandler(filename=CONFIG.STD_PATH + 'logs/Supertrend-' + timestr + '.log', mode='w')
-        if CONFIG.SIMULATION_MODE:
-            handler = logging.FileHandler(filename=CONFIG.STD_PATH + 'logs/Simulation/Supertrend-' + timestr + '.log', mode='w')
+        handler = {}
 
-        handler.setFormatter(formatter)
-        self.LOG = logging.getLogger("supertrend")
-        self.LOG.setLevel(logging.INFO)
-        self.LOG.addHandler(handler)
+        self.LOG[self.stock_id] = None
+        handler[self.stock_id] = logging.FileHandler(
+            filename=CONFIG.STD_PATH + 'logs/Supertrend/Supertrend-' + str(self.stock_id) + '-' + timestr + '.log', mode='w')
+        handler[self.stock_id].setFormatter(formatter)
+        self.LOG[self.stock_id] = logging.getLogger("Supertrend-" + str(self.stock_id))
+        self.LOG[self.stock_id].setLevel(logging.INFO)
+        self.LOG[self.stock_id].addHandler(handler[self.stock_id])
+
+        self.TICK_M[self.stock_id] = CONFIG.MULTISTOCK[self.stock_id]['ticks']
+        self.ATR_M[self.stock_id] = CONFIG.MULTISTOCK[self.stock_id]['AVG_TRUE_RANGE']
+        self.TR_M[self.stock_id] = CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE']
+        self.SUPERTREND_M[self.stock_id] = CONFIG.MULTISTOCK[self.stock_id]['SUPERTREND']
 
         self.TREND = CONFIG.SUPERTREND_TREND
-        pass
+        print("Supertrend obj initialized for instrument:", self.stock_id)
+        self.LOG[self.stock_id].info("Supertrend obj initialized for instrument= %d", self.stock_id)
+        return
 
     def maximum(self, a, b, c):
         local_max = None
@@ -123,32 +142,33 @@ class SuperTrend():
         Hence keep the TR[cur_idx]=0 for this second. for every second in future, TR[cur_idx]
         will be updated to the correct value.
         """
-        if (cur_idx) not in CONFIG.tick.keys():
-            CONFIG.TRUE_RANGE[cur_idx] = 0
+        if (cur_idx) not in CONFIG.MULTISTOCK[self.stock_id]['ticks'].keys():
+            CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE'][cur_idx] = 0
             return
 
-        if len(CONFIG.tick) <= 1:
-            temp = (CONFIG.tick[cur_idx][1] - CONFIG.tick[cur_idx][2])
-            CONFIG.TRUE_RANGE[cur_idx] = (float(format(temp, '.2f')))
-            self.LOG.info("The First TR:%s, at:%s", CONFIG.TRUE_RANGE, cur_idx)
+        if len(CONFIG.MULTISTOCK[self.stock_id]['ticks']) <= 1:
+            temp = (CONFIG.MULTISTOCK[self.stock_id]['ticks'][cur_idx][1] - CONFIG.MULTISTOCK[self.stock_id]['ticks'][cur_idx][2])
+            CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE'][cur_idx] = (float(format(temp, '.2f')))
+            true_range = (float(format(temp, '.2f')))
+            self.LOG[self.stock_id].info("The First TR:%s, at:%s", true_range, cur_idx)
 
         else:
             prev_mkt_idx = cur_mkt_idx - datetime.timedelta(minutes=CONFIG.time_interval)
             prev_idx = str(prev_mkt_idx)
-            self.LOG.info("Prev:%s, Cur:%s", prev_idx, cur_idx)
+            self.LOG[self.stock_id].info("Prev:%s, Cur:%s", prev_idx, cur_idx)
 
-            if (prev_idx) not in CONFIG.tick.keys():
-                self.LOG.info("Prev_idx:%s, Not found in tick. Update cur TR to prev TR.", prev_idx)
-                if (prev_idx) in CONFIG.TRUE_RANGE.keys():
-                    CONFIG.TRUE_RANGE[cur_idx] = CONFIG.TRUE_RANGE[prev_idx]
+            if (prev_idx) not in CONFIG.MULTISTOCK[self.stock_id]['ticks'].keys():
+                self.LOG[self.stock_id].info("Prev_idx:%s, Not found in tick. Update cur TR to prev TR.", prev_idx)
+                if (prev_idx) in CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE'].keys():
+                    CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE'][cur_idx] = CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE'][prev_idx]
                 return
 
-            temp = self.maximum(abs(CONFIG.tick[cur_idx][1] - CONFIG.tick[cur_idx][2]),
-                                abs(CONFIG.tick[cur_idx][1] - CONFIG.tick[prev_idx][3]),
-                                abs(CONFIG.tick[cur_idx][2] - CONFIG.tick[prev_idx][3])
+            temp = self.maximum(abs(CONFIG.MULTISTOCK[self.stock_id]['ticks'][cur_idx][1] - CONFIG.MULTISTOCK[self.stock_id]['ticks'][cur_idx][2]),
+                                abs(CONFIG.MULTISTOCK[self.stock_id]['ticks'][cur_idx][1] - CONFIG.MULTISTOCK[self.stock_id]['ticks'][prev_idx][3]),
+                                abs(CONFIG.MULTISTOCK[self.stock_id]['ticks'][cur_idx][2] - CONFIG.MULTISTOCK[self.stock_id]['ticks'][prev_idx][3])
                                 )
-            CONFIG.TRUE_RANGE[cur_idx] = (float(format(temp, '.2f')))
-            self.LOG.info("TrueRange:%s, at time:%s", CONFIG.TRUE_RANGE[cur_idx], cur_idx)
+            CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE'][cur_idx] = (float(format(temp, '.2f')))
+            self.LOG[self.stock_id].info("TrueRange:%s, at time:%s", CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE'][cur_idx], cur_idx)
 
         return
 
@@ -165,49 +185,53 @@ class SuperTrend():
         Hence keep the TR[cur_idx]=0 for this second. for every second in future, TR[cur_idx]
         will be updated to the correct value.
         """
-        if cur_idx not in CONFIG.TRUE_RANGE.keys():
-            CONFIG.TRUE_RANGE[cur_idx] = 0
+        if cur_idx not in CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE'].keys():
+            CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE'][cur_idx] = 0
             return
 
-        if len(CONFIG.tick) < CONFIG.SUPER_PERIOD:
-            CONFIG.AVG_TRUE_RANGE[cur_idx] = 0
-            self.LOG.info("AVG_TRUE_RANGE:%s, len:%d", CONFIG.AVG_TRUE_RANGE[cur_idx], len(CONFIG.TRUE_RANGE))
+        if len(CONFIG.MULTISTOCK[self.stock_id]['ticks']) < CONFIG.SUPER_PERIOD:
+            CONFIG.MULTISTOCK[self.stock_id]['AVG_TRUE_RANGE'][cur_idx] = 0
+            self.LOG[self.stock_id].info("AVG_TRUE_RANGE:%s, len:%d",
+                                         CONFIG.MULTISTOCK[self.stock_id]['AVG_TRUE_RANGE'][cur_idx],
+                                         len(CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE']))
             return
 
         """
         1st ATR is Arithematic mean.
         """
-        if len(CONFIG.tick) == CONFIG.SUPER_PERIOD:
+        if len(CONFIG.MULTISTOCK[self.stock_id]['ticks']) == CONFIG.SUPER_PERIOD:
             idx = 0
             loc_sum = 0
             mkt_idx = cur_mkt_idx
             while (idx < CONFIG.SUPER_PERIOD):
                 cur = str(mkt_idx)
-                loc_sum += CONFIG.TRUE_RANGE[cur]
+                loc_sum += CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE'][cur]
                 mkt_idx = mkt_idx - datetime.timedelta(minutes=CONFIG.time_interval)
                 idx = idx + 1
             temp = float(loc_sum) / float(CONFIG.SUPER_PERIOD)
-            self.average_TR.append(float(format(temp, '.2f')))
-            CONFIG.AVG_TRUE_RANGE[cur_idx] = float(format(temp, '.2f'))
-            self.LOG.info("The first ATR:%s, at time:%s, len:%d", CONFIG.AVG_TRUE_RANGE[cur_idx],
-                          cur_idx, len(CONFIG.TRUE_RANGE))
+            CONFIG.MULTISTOCK[self.stock_id]['AVG_TRUE_RANGE'][cur_idx] = float(format(temp, '.2f'))
+            self.LOG[self.stock_id].info("The first ATR:%s, at time:%s, len:%d",
+                                         CONFIG.MULTISTOCK[self.stock_id]['AVG_TRUE_RANGE'][cur_idx], cur_idx,
+                                         len(CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE']))
         else:
-            if prev_idx not in CONFIG.AVG_TRUE_RANGE.keys():
-                self.LOG.info("Prev_idx:%s, Not found in AVG_TRUE_RANGE.", prev_idx)
-                self.LOG.info("TR:%s, ATR:%s", CONFIG.TRUE_RANGE, CONFIG.AVG_TRUE_RANGE)
-                CONFIG.AVG_TRUE_RANGE[cur_idx] = (CONFIG.TRUE_RANGE[cur_idx]) / float(CONFIG.SUPER_PERIOD)
+            if prev_idx not in CONFIG.MULTISTOCK[self.stock_id]['AVG_TRUE_RANGE'].keys():
+                self.LOG[self.stock_id].error("Prev_idx:%s, Not found in AVG_TRUE_RANGE.", prev_idx)
+                self.LOG[self.stock_id].error("TR:%s, ATR:%s", CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE'],
+                              CONFIG.MULTISTOCK[self.stock_id]['AVG_TRUE_RANGE'])
+                CONFIG.MULTISTOCK[self.stock_id]['AVG_TRUE_RANGE'][cur_idx] = (CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE'][cur_idx]) / float(CONFIG.SUPER_PERIOD)
                 return
-            self.LOG.info("ATR ticks timing:Cur:%s, Prev:%s", cur_idx, prev_idx)
-            cur_atr = float(CONFIG.AVG_TRUE_RANGE[prev_idx] * (CONFIG.SUPER_PERIOD - 1)
-                            + CONFIG.TRUE_RANGE[cur_idx]) / float(CONFIG.SUPER_PERIOD)
 
-            CONFIG.AVG_TRUE_RANGE[cur_idx] = (float(format(cur_atr, '.2f')))
+            self.LOG[self.stock_id].info("ATR ticks timing:Cur:%s, Prev:%s", cur_idx, prev_idx)
+            cur_atr = float(CONFIG.MULTISTOCK[self.stock_id]['AVG_TRUE_RANGE'][prev_idx] * (CONFIG.SUPER_PERIOD - 1)
+                            + CONFIG.MULTISTOCK[self.stock_id]['TRUE_RANGE'][cur_idx]) / float(CONFIG.SUPER_PERIOD)
+
+            CONFIG.MULTISTOCK[self.stock_id]['AVG_TRUE_RANGE'][cur_idx] = (float(format(cur_atr, '.2f')))
             if CONFIG.trading_exchange == "MCX":
-                if CONFIG.AVG_TRUE_RANGE[cur_idx] > (2 * CONFIG.COMMODITY_PROFIT_MARGIN):
-                    CONFIG.AVG_TRUE_RANGE[cur_idx] = (2 * CONFIG.COMMODITY_PROFIT_MARGIN - 1)
+                if CONFIG.MULTISTOCK[self.stock_id]['AVG_TRUE_RANGE'][cur_idx] > (2 * CONFIG.COMMODITY_PROFIT_MARGIN):
+                    CONFIG.MULTISTOCK[self.stock_id]['AVG_TRUE_RANGE'][cur_idx] = (2 * CONFIG.COMMODITY_PROFIT_MARGIN - 1)
 
-            self.LOG.info("ATR:%s, len:%d", CONFIG.AVG_TRUE_RANGE[cur_idx], len(CONFIG.AVG_TRUE_RANGE))
-            self.average_TR.append(float(format(cur_atr, '.2f')))
+            self.LOG[self.stock_id].info("ATR:%s, len:%d", CONFIG.MULTISTOCK[self.stock_id]['AVG_TRUE_RANGE'],
+                                         len(CONFIG.MULTISTOCK[self.stock_id]['AVG_TRUE_RANGE']))
 
         return
 
@@ -839,14 +863,15 @@ class SuperTrend():
 
     def main_supertrend(self):
 
-        if (not len(CONFIG.tick)):
-            self.LOG.error("Tick is empty")
+        if (not len(CONFIG.MULTISTOCK[self.stock_id]['ticks'])):
+            self.LOG[self.stock_id].error("Tick is empty")
             return
 
         cur_time = datetime.datetime.now().replace(microsecond=0)
 
         self.TrueRange(cur_time)
         self.Average_TR(cur_time)
+        return
 
         cur_min = cur_time.minute - (cur_time.minute % CONFIG.time_interval)
         cur_mkt_idx = cur_time.replace(minute=cur_min, second=0, microsecond=0)
@@ -890,35 +915,53 @@ class SuperTrend():
             self.supertrend_util(cur_time)
         return
 
+    def utility(self):
+        if CONFIG.trading_exchange == "MCX":
+            market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR_COMMODITY,
+                                                              minute=CONFIG.CLOSE_MIN_COMMODITY, second=0,
+                                                              microsecond=0)
+        else:
+            market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR,
+                                                              minute=CONFIG.CLOSE_MIN, second=0,
+                                                              microsecond=0)
+        self.LOG[self.stock_id].info("Inside supertrend utilit for instrumnent %d", self.stock_id)
+        print("Inside supertrend utilit for instrumnent:", self.stock_id)
+        while True:
+            Timer(1, self.main_supertrend, []).run()
 
+            """ This logic of exiting works only for Single stock system"""
+            if CONFIG.trading_exchange == "MCX":
+                if (datetime.datetime.now().replace(microsecond=0) >= market_end_time and not CONFIG.SIMULATION_MODE):
+                    print("Exitint supertrend thread as MCX market has closed.")
+                    return
+
+            elif (CONFIG.trading_exchange == "NSE" or CONFIG.trading_exchange == "NFO"):
+                if (datetime.datetime.now().replace(microsecond=0) >= market_end_time and not CONFIG.SIMULATION_MODE):
+                    print("Exitint supertrend thread as NSE/NFO market has closed.")
+                    return
+
+        return
+
+
+
+supertrend_objs = {}
 def main():
+
     while (True):
         tick_timestamp = datetime.datetime.now().replace(microsecond=0)
         if (tick_timestamp.minute % CONFIG.time_interval == 0):
             break
 
-    obj = SuperTrend()
-    if CONFIG.trading_exchange == "MCX":
-        market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR_COMMODITY,
-                                                          minute=CONFIG.CLOSE_MIN_COMMODITY, second=0,
-                                                          microsecond=0)
-    else:
-        market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR,
-                                                          minute=CONFIG.CLOSE_MIN, second=0,
-                                                          microsecond=0)
-
-    while True:
-        Timer(1, obj.main_supertrend, []).run()
-
-        """ This logic of exiting works only for Single stock system"""
-        if CONFIG.trading_exchange == "MCX":
-            if (datetime.datetime.now().replace(microsecond=0) >= market_end_time and not CONFIG.SIMULATION_MODE):
-                print("Exitint supertrend thread as MCX market has closed.")
-                return
-
-        elif (CONFIG.trading_exchange == "NSE" or CONFIG.trading_exchange == "NFO"):
-            if (datetime.datetime.now().replace(microsecond=0) >= market_end_time and not CONFIG.SIMULATION_MODE):
-                print("Exitint supertrend thread as NSE/NFO market has closed.")
-                return
+    for id in CONFIG.TRADE_INSTRUMENT:
+        """
+        First create multiple objects constructs
+        :return:
+        """
+        supertrend_objs[id] = SuperTrend(id)
+        print("Super trend initialized for", id)
+        obj = Thread(target=supertrend_objs[id].utility)
+        obj.start()
 
     return
+
+

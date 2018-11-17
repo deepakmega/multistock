@@ -6,8 +6,10 @@ Created on 09-Aug-2017
 
 
 import json
+import pandas as pd
 
 
+#######################################################################################################################
 """
 Standard Constants
 """
@@ -19,26 +21,28 @@ SYSTEM_STARTED_TIME = None
 GlobalInstObj = None
 TIMER_STD_VAL = 1 #1 second default value
 OPEN_COVER_ORDERS = {}
+OPEN = 0
+HIGH = 1
+LOW = 2
+CLOSE = 3
+#######################################################################################################################
 
+
+
+credentials_dict = json.load(open(STD_PATH+"configfiles/credentials_upstox.txt"))
+
+#######################################################################################################################
+TRADE_INSTRUMENT = ["RELIANCE", "RELINFRA", "INFY", "ICICIBANK", "AXISBANK", "AUROPHARMA",
+                  "MARUTI", "INDUSINDBK", "HEROMOTOCO", 'LUPIN', "ULTRACEMCO", "BAJAJFINSV",
+                  "HDFC", "ASIANPAINT", "BAJAJ-AUTO", "IBULHSGFIN", "LT", "UPL", "KOTAKBANK",
+                  "HDFCBANK", "HINDUNILVR", "TITAN", "GRASIM", "HCLTECH", "TCS", "BAJFINANCE",
+                  "CIPLA", "DRREDDY", "TECHM", "BATAINDIA"]
+#######################################################################################################################
+
+
+#######################################################################################################################
 """
-Simulation Constants
-"""
-SIMULATION_MODE = False
-OPEN_ORDERS = {}
-SIMULATION_START_HR = None
-SIMULATION_START_MIN = None
-
-'''
-NIFTY, NSE, NFO constants
-'''
-OPEN_HR = 9
-OPEN_MIN = 15
-
-CLOSE_HR = 15
-CLOSE_MIN = 30
-
-"""
-Commodity Exchange timings
+Exchange timings
 """
 OPEN_HR_COMMODITY = 10
 OPEN_MIN_COMMODITY = 1
@@ -46,66 +50,121 @@ OPEN_MIN_COMMODITY = 1
 CLOSE_HR_COMMODITY = 23
 CLOSE_MIN_COMMODITY = 30
 
-'''
-Check to execute Simple Moving average only once
-'''
-SMA_7PERIOD=False
-SMA_54PERIOD=False
-SMA_200PERIOD=False
+OPEN_HR = 7
+OPEN_MIN = 15
 
-SMA_1PERIOD = 1
-SMA_14PERIOD = 14
-SMA_5PERIOD = 5
-SMA_34PERIOD = 34
-
-UPTREND = "UPTREND"
-DOWNTREND = "DOWNTREND"
-
-EMA_7PERIOD_DATA=[]
-EMA_54PERIOD_DATA=[]
-EMA_200PERIOD_DATA=[]
-
-'''
-SUPERTREND CONSTANTS
-'''
-SUPER_MULTIPLIER=3
-SUPER_PERIOD=7
-TRUE_RANGE = {}
-AVG_TRUE_RANGE = {}
-SUPERTREND = {}
-SUPERTREND_TREND = {}
-#these values are used to plot the graph
-SUPERTREND_STARTING_TIME=None
-SUPERTREND_COUNT = 1
-
-'''
-Linear Regression constants.
-'''
-LINEAR_REGRESSION = {}
-LINEAR_REGRESSION_PREDICTOR = {}
-
-'''
-RSI Constants
-'''
-RSI = {}
-RSI_PERIOD = 5
-RSI_OVERBOUGHT = 95.0
-RSI_OVERSOLD = 5.0
-'''
-Number of lots for trading
-'''
-BUY_LOT_QUANTITY=0
-SELL_LOT_QUANTITY=0
-TRADE_COUNT=0
-BUY_PRICE = {}
-SELL_PRICE = {}
-
-'''
-Trading Instrument
-'''
-TRADE_INSTRUMENT = [1510401, 2953217, 408065, 4267265, 340481]
+CLOSE_HR = 15
+CLOSE_MIN = 30
+#######################################################################################################################
 
 
+
+#######################################################################################################################
+'''
+Multistock constants
+'''
+MULTISTOCK = {}
+for stock in TRADE_INSTRUMENT:
+    MULTISTOCK[stock]={}
+    MULTISTOCK[stock]['CMP'] = None
+    MULTISTOCK[stock]['LTP'] = {}
+
+    MULTISTOCK[stock]['5MIN'] = {}
+    MULTISTOCK[stock]['5MIN']['TICKS'] = pd.DataFrame()
+    MULTISTOCK[stock]['5MIN']['10SMA'] = None
+    MULTISTOCK[stock]['5MIN']['50SMA'] = None
+    MULTISTOCK[stock]['5MIN']['100SMA'] = None
+    MULTISTOCK[stock]['5MIN']['150SMA'] = None
+    MULTISTOCK[stock]['5MIN']['200SMA'] = None
+    MULTISTOCK[stock]['5MIN']['400SMA'] = None
+    MULTISTOCK[stock]['5MIN']['AVG_TRUE_RANGE'] = None
+    MULTISTOCK[stock]['5MIN']['TRUE_RANGE'] = None
+    MULTISTOCK[stock]['5MIN']['SUPERTREND'] = None
+
+    MULTISTOCK[stock]['10MIN'] = {}
+    MULTISTOCK[stock]['10MIN']['TICKS'] = pd.DataFrame()
+    MULTISTOCK[stock]['10MIN']['10SMA'] = None
+    MULTISTOCK[stock]['10MIN']['50SMA'] = None
+    MULTISTOCK[stock]['10MIN']['100SMA'] = None
+    MULTISTOCK[stock]['10MIN']['150SMA'] = None
+    MULTISTOCK[stock]['10MIN']['200SMA'] = None
+    MULTISTOCK[stock]['10MIN']['400SMA'] = None
+    MULTISTOCK[stock]['10MIN']['AVG_TRUE_RANGE'] = None
+    MULTISTOCK[stock]['10MIN']['TRUE_RANGE'] = None
+    MULTISTOCK[stock]['10MIN']['SUPERTREND'] = None
+
+    MULTISTOCK[stock]['15MIN'] = {}
+    MULTISTOCK[stock]['15MIN']['TICKS'] = pd.DataFrame()
+    MULTISTOCK[stock]['15MIN']['10SMA'] = None
+    MULTISTOCK[stock]['15MIN']['50SMA'] = None
+    MULTISTOCK[stock]['15MIN']['100SMA'] = None
+    MULTISTOCK[stock]['15MIN']['150SMA'] = None
+    MULTISTOCK[stock]['15MIN']['200SMA'] = None
+    MULTISTOCK[stock]['15MIN']['400SMA'] = None
+    MULTISTOCK[stock]['15MIN']['BB_50'] = None
+    MULTISTOCK[stock]['15MIN']['AVG_TRUE_RANGE'] = None
+    MULTISTOCK[stock]['15MIN']['TRUE_RANGE'] = None
+    MULTISTOCK[stock]['15MIN']['SUPERTREND'] = None
+
+    MULTISTOCK[stock]['30MIN'] = {}
+    MULTISTOCK[stock]['30MIN']['TICKS'] = pd.DataFrame()
+    MULTISTOCK[stock]['30MIN']['10SMA'] = None
+    MULTISTOCK[stock]['30MIN']['50SMA'] = None
+    MULTISTOCK[stock]['30MIN']['100SMA'] = None
+    MULTISTOCK[stock]['30MIN']['150SMA'] = None
+    MULTISTOCK[stock]['30MIN']['200SMA'] = None
+    MULTISTOCK[stock]['30MIN']['400SMA'] = None
+    MULTISTOCK[stock]['30MIN']['BB_50'] = None
+    MULTISTOCK[stock]['30MIN']['AVG_TRUE_RANGE'] = None
+    MULTISTOCK[stock]['30MIN']['TRUE_RANGE'] = None
+    MULTISTOCK[stock]['30MIN']['SUPERTREND'] = None
+
+    MULTISTOCK[stock]['1HOUR'] = {}
+    MULTISTOCK[stock]['1HOUR']['TICKS'] = pd.DataFrame()
+    MULTISTOCK[stock]['1HOUR']['10SMA'] = None
+    MULTISTOCK[stock]['1HOUR']['50SMA'] = None
+    MULTISTOCK[stock]['1HOUR']['100SMA'] = None
+    MULTISTOCK[stock]['1HOUR']['150SMA'] = None
+    MULTISTOCK[stock]['1HOUR']['200SMA'] = None
+    MULTISTOCK[stock]['1HOUR']['400SMA'] = None
+    MULTISTOCK[stock]['1HOUR']['BB_50'] = None
+    MULTISTOCK[stock]['1HOUR']['AVG_TRUE_RANGE'] = None
+    MULTISTOCK[stock]['1HOUR']['TRUE_RANGE'] = None
+    MULTISTOCK[stock]['1HOUR']['SUPERTREND'] = None
+
+    MULTISTOCK[stock]['1DAY'] = {}
+    MULTISTOCK[stock]['1DAY']['TICKS'] = pd.DataFrame()
+    MULTISTOCK[stock]['1DAY']['10SMA'] = None
+    MULTISTOCK[stock]['1DAY']['50SMA'] = None
+    MULTISTOCK[stock]['1DAY']['100SMA'] = None
+    MULTISTOCK[stock]['1DAY']['150SMA'] = None
+    MULTISTOCK[stock]['1DAY']['200SMA'] = None
+    MULTISTOCK[stock]['1DAY']['400SMA'] = None
+    MULTISTOCK[stock]['1DAY']['AVG_TRUE_RANGE'] = None
+    MULTISTOCK[stock]['1DAY']['TRUE_RANGE'] = None
+    MULTISTOCK[stock]['1DAY']['SUPERTREND'] = None
+
+    MULTISTOCK[stock]['1WEEK'] = {}
+    MULTISTOCK[stock]['1WEEK']['TICKS'] = pd.DataFrame()
+    MULTISTOCK[stock]['1WEEK']['10SMA'] = None
+    MULTISTOCK[stock]['1WEEK']['50SMA'] = None
+    MULTISTOCK[stock]['1WEEK']['100SMA'] = None
+    MULTISTOCK[stock]['1WEEK']['150SMA'] = None
+    MULTISTOCK[stock]['1WEEK']['200SMA'] = None
+    MULTISTOCK[stock]['1WEEK']['400SMA'] = None
+    MULTISTOCK[stock]['1WEEK']['AVG_TRUE_RANGE'] = None
+    MULTISTOCK[stock]['1WEEK']['TRUE_RANGE'] =  None
+    MULTISTOCK[stock]['1WEEK']['SUPERTREND'] = None
+
+    MULTISTOCK[stock]['DataFrame'] = pd.DataFrame(0, index=['5Min', '10Min', '15Min', '30Min', '1H', '1D','1W'],
+                                                  columns=['10SMA', '50SMA', '100SMA', '150SMA', '200SMA', '400SMA',
+                                                           'BB_50_UP', 'BB_50_DOWN'])
+
+    MULTISTOCK[stock]['Option_chain'] = pd.DataFrame()
+#######################################################################################################################
+
+
+#######################################################################################################################
 def PRICE_FORMAT(price):
     price = float(price)
     number, decimal = str(price).split(".")
@@ -120,7 +179,12 @@ def PRICE_FORMAT(price):
     final_price = float(number)+(float(formatted_price)/100.0)
 
     return (float(format(final_price, '.2f')))
+#######################################################################################################################
 
+
+
+
+#######################################################################################################################
 def init():
     """
     tick - contains OHLC calculated based on the time interval
@@ -134,28 +198,18 @@ def init():
     global KITE, MARKET_LTP, CRUDE_PIP, NIFTY_PIP, PIP, NIFTY_PROFIT_MARGIN, NIFTY_EXPECTED_ATR, COMMODITY_PROFIT_MARGIN
     global save2file_flag
     global ohlc_data, plotted
-    global SMA_5PERIOD_VALUE, SMA_34PERIOD_VALUE, SMA_1PERIOD_VALUE, SMA_14PERIOD_VALUE
-    credentials_dict = json.load(open(STD_PATH+"configfiles/credentials.txt"))
+
+
 
     save2file_flag = True
 
-    SMA_5PERIOD_VALUE = None
-    SMA_34PERIOD_VALUE = None
-    SMA_1PERIOD_VALUE = None
-    SMA_14PERIOD_VALUE = None
-    CRUDE_PIP = 1.0
-    NIFTY_PIP = 3.0
-    NIFTY_PROFIT_MARGIN = 12.0
-    COMMODITY_PROFIT_MARGIN = 8
-    NIFTY_EXPECTED_ATR = 5.0
     PIP = None
-
 
     tick = {}
     tick_secondary = {}
     ORDER_MANAGER= {}
     OrderCancelDeadline = 5
-    time_interval = 15  #default time interval=15min
+    time_interval = 1  #default time interval=15min
     time_interval_secondary = 60
 
 
@@ -163,15 +217,10 @@ def init():
     KITE = None
 
     '''
-    sample variable for testing candlestick chart
-    '''
-    ohlc_data = []
-    plotted = False
-
-    '''
     Authentication constant Variables
     '''
     global  CLIENT_ID , API_KEY , API_SECRET , REQUEST_TOKEN , ACCESS_TOKEN , PUBLIC_TOKEN , REFRESH_TOKEN
+    global UPSTOX_SESSION
 
     CLIENT_ID = credentials_dict['login_cred']['username']
     API_KEY = credentials_dict['API_KEY']
@@ -181,6 +230,7 @@ def init():
     ACCESS_TOKEN = "P8TCFKf04P9U8YFanEQa3DzFulVEu2AN"
     PUBLIC_TOKEN = "c120f2f8edd54f01caa65c8b54b77e7b"
     REFRESH_TOKEN = "sample"
+    UPSTOX_SESSION = None
 
     ''''
     Parameters required for placing order
@@ -192,7 +242,7 @@ def init():
     trading_symbol = "CRUDEOILM18AUGFUT" #"NIFTY18JULFUT" #"NIFTY50"#"CRUDEOIL18APRFUT"
 
     #Possible values for trading_exchange are "NSE", "BSE", "NFO",  "CDS",  "MCX"
-    trading_exchange = "NFO"
+    trading_exchange = "MCX"
 
     #possible values for trading_order_type are "LIMIT" , "MARKET" and "SL"
     trading_order_type = "LIMIT"
@@ -205,3 +255,5 @@ def init():
 
     #number of shares to buy trading_quantity
     trading_quantity = 1
+#######################################################################################################################
+
