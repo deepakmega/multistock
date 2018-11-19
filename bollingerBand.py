@@ -19,7 +19,7 @@ import os
 import multiprocessing
 from multiprocessing import Process
 from threading import Thread
-import numpy
+import numpy as np
 import talib as ta
 
 
@@ -48,12 +48,13 @@ class Bollingerband:
         for stock in CONFIG.TRADE_INSTRUMENT:
             if not CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'].empty \
                 and not CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'].empty \
-                    and not CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'].empty \
-                        and not CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'].empty \
-                            and not CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'].empty \
-                                and not CONFIG.MULTISTOCK[stock]['1WEEK']['TICKS'].empty:
+                    and not CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'].empty \
+                        and not CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'].empty \
+                            and not CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'].empty \
+                                and not CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'].empty \
+                                    and not CONFIG.MULTISTOCK[stock]['1WEEK']['TICKS'].empty:
                 try:
-                    BB_out = ta.BBANDS(CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'].tail(50).close.values,
+                    BB_out = ta.BBANDS(np.array(CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'].tail(50).close.values),
                             timeperiod=50)
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['5Min', 'BB_50_UP'] = round(BB_out[self.uband][-1], 2)
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['5Min', 'BB_50_DOWN'] = round(BB_out[self.lband][-1], 2)
@@ -63,7 +64,7 @@ class Bollingerband:
                     continue
 
                 try:
-                    BB_out = ta.BBANDS(CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'].tail(50).close.values,
+                    BB_out = ta.BBANDS(np.array(CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'].tail(50).close.values),
                                    timeperiod=50)
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['10Min', 'BB_50_UP'] = round(BB_out[self.uband][-1], 2)
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['10Min', 'BB_50_DOWN'] = round(BB_out[self.lband][-1], 2)
@@ -73,7 +74,7 @@ class Bollingerband:
                     continue
 
                 try:
-                    BB_out = ta.BBANDS(CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'].tail(50).close.values,
+                    BB_out = ta.BBANDS(np.array(CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'].tail(50).close.values),
                                    timeperiod=50)
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['15Min', 'BB_50_UP'] = round(BB_out[self.uband][-1], 2)
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['15Min', 'BB_50_DOWN'] = round(BB_out[self.lband][-1], 2)
@@ -83,7 +84,7 @@ class Bollingerband:
                     continue
 
                 try:
-                    BB_out = ta.BBANDS(CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'].tail(50).close.values,
+                    BB_out = ta.BBANDS(np.array(CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'].tail(50).close.values),
                                    timeperiod=50)
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['30Min', 'BB_50_UP'] = round(BB_out[self.uband][-1], 2)
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['30Min', 'BB_50_DOWN'] = round(BB_out[self.lband][-1], 2)
@@ -93,7 +94,7 @@ class Bollingerband:
                     continue
 
                 try:
-                    BB_out = ta.BBANDS(CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'].tail(50).close.values,
+                    BB_out = ta.BBANDS(np.array(CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'].tail(50).close.values),
                                        timeperiod=50)
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1H', 'BB_50_UP'] = round(BB_out[self.uband][-1], 2)
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1H', 'BB_50_DOWN'] = round(BB_out[self.lband][-1], 2)

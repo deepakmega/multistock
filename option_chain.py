@@ -175,16 +175,27 @@ class Option_Chain:
             d_sup_idx = Option_chain['Put-chngInOi'].idxmax()
             d_res_idx = Option_chain['Call-chngInOi'].idxmax()
 
-            cur_strike = (int(int(symbol_ltp) / int(strike_diff)) * float(strike_diff))
-            prev_strike = ((int(int(symbol_ltp) / int(strike_diff)) - 1) * float(strike_diff))
-            next_strike = ((int(int(symbol_ltp) / int(strike_diff)) + 1) * float(strike_diff))
+            cur_strike_price = (int(int(symbol_ltp) / int(strike_diff)) * float(strike_diff))
+            prev_strike_price = ((int(int(symbol_ltp) / int(strike_diff)) - 1) * float(strike_diff))
+            next_strike_price = ((int(int(symbol_ltp) / int(strike_diff)) + 1) * float(strike_diff))
 
-            Option_chain = Option_chain.loc[Option_chain["Strike"].isin([prev_strike, cur_strike, next_strike])]
+            Option_chain = Option_chain.loc[Option_chain["Strike"].isin([prev_strike_price, cur_strike_price, next_strike_price])]
 
-            prev_strike_idx = Option_chain[Option_chain["Strike"] == prev_strike].index.values.astype(int)[0]
-            cur_strike_idx = Option_chain[Option_chain["Strike"] == cur_strike].index.values.astype(int)[0]
-            next_strike_idx = Option_chain[Option_chain["Strike"] == next_strike].index.values.astype(int)[0]
 
+            prev_strike_idx = Option_chain[Option_chain["Strike"] == prev_strike_price].index.values.astype(int)
+            cur_strike_idx = Option_chain[Option_chain["Strike"] == cur_strike_price].index.values.astype(int)
+            next_strike_idx = Option_chain[Option_chain["Strike"] == next_strike_price].index.values.astype(int)
+
+            if not prev_strike_idx or not cur_strike_idx or not next_strike_idx:
+                self.LOG.error("%s - Option chain, stike index seems to be zero. Fetch it next time.", symbol)
+                return
+            else:
+                if prev_strike_idx:
+                    prev_strike_idx = prev_strike_idx[-1]
+                if cur_strike_idx:
+                    cur_strike_idx = cur_strike_idx[-1]
+                if next_strike_idx:
+                    next_strike_idx = next_strike_idx[-1]
 
             Option_chain = Option_chain.assign(Direction="")
             for i in [prev_strike_idx, cur_strike_idx, next_strike_idx]:
@@ -195,10 +206,12 @@ class Option_Chain:
 
             CONFIG.MULTISTOCK[symbol]['Option_chain'] = Option_chain
             #self.LOG.info("\n%s\n", CONFIG.MULTISTOCK[symbol]['Option_chain'])
+            #print("Stock:",symbol)
+            #print(CONFIG.MULTISTOCK[symbol]['Option_chain'])
 
-        except Exception as e:
-            self.LOG.error("%s - Exception during Dataframe processing.")
-            self.LOG.error("\n%s\n", str(e))
+        except Exception as er:
+            self.LOG.error("%s - Exception during Dataframe processing.",symbol)
+            self.LOG.error(("\n%s\n",str(er)))
             return -1
 
         return
@@ -227,9 +240,8 @@ def main():
     return
 
 
-"""
+
 if __name__ == '__main__':
     import config as CONFIG
     CONFIG.init()
     main()
-"""

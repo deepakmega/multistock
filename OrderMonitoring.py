@@ -10,7 +10,7 @@ import requests
 import json
 import time
 import ExchangeInterface
-from Authentication import Authenticate
+from authentication import Authenticate
 import logging
 import threading
 from threading import Timer

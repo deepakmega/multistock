@@ -32,19 +32,24 @@ CLOSE = 3
 credentials_dict = json.load(open(STD_PATH+"configfiles/credentials_upstox.txt"))
 
 #######################################################################################################################
-TRADE_INSTRUMENT = ["RELIANCE", "RELINFRA", "INFY", "ICICIBANK", "AXISBANK", "AUROPHARMA","BANDHANBNK", "PEL", "SUNTV",
-                  "MARUTI", "INDUSINDBK", "HEROMOTOCO", 'LUPIN', "ULTRACEMCO", "BAJAJFINSV","ABB", "BRITANNIA", "OFSS",
-                  "HDFC", "ASIANPAINT", "BAJAJ-AUTO", "IBULHSGFIN", "LT", "UPL", "KOTAKBANK","COLPAL","DABUR","MARICO",
-                  "HDFCBANK", "HINDUNILVR", "TITAN", "GRASIM", "HCLTECH", "TCS", "BAJFINANCE","PIDILITIND",
-                  "CIPLA", "DRREDDY", "TECHM", "BATAINDIA", "MINDTREE", "ZEEL","TATASTEEL", "SIEMENS","INDIGO",
-                  "GODREJCP", "ICICIGI", "SBILIFE", "BIOCON", "ACC", "CONCOR", "HAVELLS", "SRTRANSFIN", "LICHSGFIN",
-                  "CANBK","AJANTPHARM","DIVISLAB", "RBLBANK", "GODREJIND", "TATACHEM", "BHARATFORG","UBL", "CENTURYTEX",
-                  "VOLTAS","TVSMOTOR","JUBLFOOD","AMARAJABAT","SRF","TORNTPHARM","MUTHOOTFIN","RAMCOCEM",
-                  "APOLLOHOSP","CUMMINSIND","GLENMARK","CHOLAFIN","BHARATFIN","NIITTECH","TATAELXSI","PVR","APLAPOLLO",
-                  "SUNPHARMA","SOBHA","GODREJPROP","BHARTIARTL","MPHASIS","WHIRLPOOL","CRISIL","GLAXO","COLPAL","PFIZER",
-                  "GSKCONS","KANSAINER","SANOFI","HEXAWARE","SBIN","YESBANK","DHFL","MGL","GAIL","ADANIPORTS","ESCORTS",
-                  "HEG","GNFC","GRUH","BBTC","LTI","CYIENT","NAUKRI","GRAPHITE","IBVENTURES","DBL","VIPIND","ARVIND",
-                  "RAYMOND","DALMIABHA","CESC","WOCKPHARMA","CAPF","MFSL","GODFRYPHLP","JUSTDIAL","BEML"]
+TRADE_INSTRUMENT = ["RELIANCE", "RELINFRA", "INFY", "ICICIBANK", "AXISBANK", "AUROPHARMA", "BANDHANBNK", "PEL", "SUNTV",
+                    "MARUTI", "INDUSINDBK", "HEROMOTOCO", 'LUPIN', "ULTRACEMCO", "BAJAJFINSV","ABB", "BRITANNIA", "OFSS",
+                    "HDFC", "ASIANPAINT", "BAJAJ-AUTO", "IBULHSGFIN", "LT", "UPL", "KOTAKBANK","COLPAL","DABUR","MARICO",
+                    "HDFCBANK", "HINDUNILVR", "TITAN", "GRASIM", "HCLTECH", "TCS", "BAJFINANCE","PIDILITIND",
+                    "CIPLA", "DRREDDY", "TECHM", "BATAINDIA", "MINDTREE", "ZEEL", "TATASTEEL", "SIEMENS", "INDIGO",
+                    "GODREJCP", "ICICIGI", "SBILIFE", "BIOCON", "ACC", "CONCOR", "HAVELLS", "SRTRANSFIN", "LICHSGFIN",
+                    "CANBK", "AJANTPHARM", "DIVISLAB", "RBLBANK", "GODREJIND", "TATACHEM", "BHARATFORG", "UBL", "CENTURYTEX",
+                    "VOLTAS", "TVSMOTOR", "JUBLFOOD", "AMARAJABAT", "SRF", "TORNTPHARM", "MUTHOOTFIN", "RAMCOCEM",
+                    "APOLLOHOSP", "CUMMINSIND", "GLENMARK", "CHOLAFIN", "BHARATFIN", "NIITTECH", "TATAELXSI", "PVR", "APLAPOLLO",
+                    "SUNPHARMA", "SOBHA", "GODREJPROP", "BHARTIARTL", "MPHASIS", "WHIRLPOOL", "CRISIL", "GLAXO", "COLPAL", "PFIZER",
+                    "GSKCONS", "KANSAINER", "SANOFI", "HEXAWARE", "SBIN", "YESBANK", "DHFL", "MGL", "GAIL", "ADANIPORTS", "ESCORTS",
+                    "HEG", "GNFC", "GRUH", "BBTC", "LTI", "CYIENT", "NAUKRI", "GRAPHITE", "IBVENTURES", "DBL", "VIPIND", "ARVIND",
+                    "RAYMOND", "DALMIABHA", "CESC", "WOCKPHARMA", "CAPF", "MFSL", "GODFRYPHLP", "JUSTDIAL", "BEML"]
+
+TRADE_INSTRUMENT_MCX_FO = ["CRUDEOIL18DECFUT"]
+
+#For testing...
+#TRADE_INSTRUMENT = TRADE_INSTRUMENT_MCX_FO
 #######################################################################################################################
 
 
@@ -165,7 +170,7 @@ for stock in TRADE_INSTRUMENT:
     MULTISTOCK[stock]['1WEEK']['SUPERTREND'] = None
 
     MULTISTOCK[stock]['DataFrame'] = pd.DataFrame(0, index=['5Min', '10Min', '15Min', '30Min', '1H', '1D','1W'],
-                                                  columns=['10SMA', '50SMA', '100SMA', '150SMA', '200SMA', '400SMA',
+                                                  columns=['10SMA', '50SMAL','50SMA','50SMAH', '100SMA', '150SMA', '200SMA', '400SMA',
                                                            'BB_50_UP', 'BB_50_DOWN'])
 
     MULTISTOCK[stock]['Option_chain'] = pd.DataFrame()

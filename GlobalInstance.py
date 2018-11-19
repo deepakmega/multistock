@@ -8,23 +8,23 @@ import  pdb
 
 from threading import Thread
 import config as CONFIG
-import DataFetcher
-from Authentication import Authenticate
+import dataFetcher
+from authentication import Authenticate
 import ExchangeInterface
 from OrderMonitoring import Orderm
 import save2file
 import Controller
 from simulator import simulator
 from Controller import Controller
-import BollingerBand
-from BollingerBand import *
+import bollingerBand
+from bollingerBand import *
 import os
 from upstox_api.api import *
 import datetime, time
-import Historical_Data_Mgmt
-import SimpleMovingAvg
+import historicalDataMgmt
+import simpleMovingAvg
 import option_chain
-
+import processor
 
 class GlobalInst(object):
     '''
@@ -71,25 +71,26 @@ class GlobalInst(object):
 
         CONFIG.SYSTEM_STARTED_TIME = datetime.datetime.now().replace(second=0, microsecond=0)
 
-        fetcherThread = Thread(target=DataFetcher.main)
-        fetcherThread.start()
+        fetcher_t = Thread(target=dataFetcher.main)
+        fetcher_t.start()
+        time.sleep(100)
 
-        """
-        Unsubscription and subscription of stocks takes significant amount of time.
-        """
-        time.sleep(120)
+        historical_t = Thread(target=historicalDataMgmt.main)
+        historical_t.start()
+        time.sleep(30)
 
-        historical_data = Thread(target=Historical_Data_Mgmt.main)
-        historical_data.start()
+        optchain_t = Thread(target=option_chain.main)
+        optchain_t.start()
+        time.sleep(60)
 
-        opt_chain = Thread(target=option_chain.main)
-        opt_chain.start()
+        sma_t = Thread(target=simpleMovingAvg.main)
+        sma_t.start()
 
-        sma_calculator = Thread(target=SimpleMovingAvg.main)
-        sma_calculator.start()
+        bollinger_t = Thread(target=bollingerBand.main)
+        bollinger_t.start()
 
-        bollinger_band = Thread(target=BollingerBand.main)
-        bollinger_band.start()
+        processor_t = Thread(target=processor.main)
+        processor_t.start()
 
         return
 

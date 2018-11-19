@@ -2,8 +2,8 @@ import  pdb
 
 from threading import Thread
 import config as CONFIG
-import DataFetcher
-from Authentication import  Authenticate
+import dataFetcher
+from authentication import  Authenticate
 import ExchangeInterface
 from OrderMonitoring import Orderm
 from MovingAverage_Mgr import MA_Mgmt, Trade_finder

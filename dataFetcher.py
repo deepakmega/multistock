@@ -270,11 +270,14 @@ def event_handler_quote_update(message):
                 config.MULTISTOCK[stock_name]['LTP'][timestamp] = float(format(float(message['ltp']), '.2f'))
                 df = pd.DataFrame(list(config.MULTISTOCK[stock_name]['LTP'].items()), columns=['Date', 'DateValue'])
                 data = df.set_index(['Date'])
+                """The LTP data after resample are upto the current timeframe accuracy.
+                """
                 data_5min = data['DateValue'].resample('5min').ohlc()
                 data_10min = data['DateValue'].resample('10min').ohlc()
                 data_15min = data['DateValue'].resample('15min', base=15).ohlc()
                 data_30min = data['DateValue'].resample('30Min', base=15).ohlc()
                 data_1hour = data['DateValue'].resample('60Min', base=15).ohlc()
+
             except Exception as e:
                 LOG.error("Exception during resampling.")
                 LOG.error("%s", str(e))
@@ -286,6 +289,7 @@ def event_handler_quote_update(message):
                 config.MULTISTOCK[stock_name]['5MIN']['TICKS'] = \
                     config.MULTISTOCK[stock_name]['5MIN']['TICKS'][
                         ~config.MULTISTOCK[stock_name]['5MIN']['TICKS'].index.duplicated(keep='last')]
+                LOG.info("%s - 5Min TICKS\n%s\n", stock_name, config.MULTISTOCK[stock_name]['5MIN']['TICKS'].tail(3))
 
             if not config.MULTISTOCK[stock_name]['10MIN']['TICKS'].empty:
                 config.MULTISTOCK[stock_name]['10MIN']['TICKS'] \
@@ -293,6 +297,7 @@ def event_handler_quote_update(message):
                 config.MULTISTOCK[stock_name]['10MIN']['TICKS'] = \
                     config.MULTISTOCK[stock_name]['10MIN']['TICKS'][
                         ~config.MULTISTOCK[stock_name]['10MIN']['TICKS'].index.duplicated(keep='last')]
+                LOG.info("%s - 10Min TICKS\n%s\n", stock_name, config.MULTISTOCK[stock_name]['10MIN']['TICKS'].tail(3))
 
             if not config.MULTISTOCK[stock_name]['15MIN']['TICKS'].empty:
                 config.MULTISTOCK[stock_name]['15MIN']['TICKS'] \
@@ -300,6 +305,7 @@ def event_handler_quote_update(message):
                 config.MULTISTOCK[stock_name]['15MIN']['TICKS'] = \
                     config.MULTISTOCK[stock_name]['15MIN']['TICKS'][
                         ~config.MULTISTOCK[stock_name]['15MIN']['TICKS'].index.duplicated(keep='last')]
+                LOG.info("%s - 15Min TICKS\n%s\n", stock_name, config.MULTISTOCK[stock_name]['15MIN']['TICKS'].tail(3))
 
             if not config.MULTISTOCK[stock_name]['30MIN']['TICKS'].empty:
                 config.MULTISTOCK[stock_name]['30MIN']['TICKS'] \
@@ -307,6 +313,7 @@ def event_handler_quote_update(message):
                 config.MULTISTOCK[stock_name]['30MIN']['TICKS'] = \
                     config.MULTISTOCK[stock_name]['30MIN']['TICKS'][
                         ~config.MULTISTOCK[stock_name]['30MIN']['TICKS'].index.duplicated(keep='last')]
+                LOG.info("%s - 30Min TICKS\n%s\n", stock_name, config.MULTISTOCK[stock_name]['30MIN']['TICKS'].tail(3))
 
             if not config.MULTISTOCK[stock_name]['1HOUR']['TICKS'].empty:
                 config.MULTISTOCK[stock_name]['1HOUR']['TICKS'] \
@@ -314,49 +321,68 @@ def event_handler_quote_update(message):
                 config.MULTISTOCK[stock_name]['1HOUR']['TICKS'] = \
                     config.MULTISTOCK[stock_name]['1HOUR']['TICKS'][
                         ~config.MULTISTOCK[stock_name]['1HOUR']['TICKS'].index.duplicated(keep='last')]
-
+                LOG.info("%s - 1Hour TICKS\n%s\n", stock_name, config.MULTISTOCK[stock_name]['1HOUR']['TICKS'].tail(3))
 
         else:
             LOG.error("%s - Not handling quotes as Current timestamp beyond 3.30PM.", stock_name)
     else:
         LOG.error("%s - not available in instrument list", stock_name)
+        return
 
     return
 
+def unsubscribe_stocks(exchange):
+    if exchange not in ['NSE_EQ','NSE_FO','BSE_EQ', 'BSE_FO','MCX_FO']:
+        LOG.error("Invalid Exchange. Stock unsubscprition failed.")
+        return False
 
-def main_upstox():
-    config.UPSTOX_SESSION.set_on_quote_update(event_handler_quote_update)
-    config.UPSTOX_SESSION.get_master_contract('NSE_EQ')
-    """
-    First unsubscribe the stocks.
-    """
     retry = 1
-    while (retry<=5):
+    while (retry <= 5):
         try:
-            for stock in config.TRADE_INSTRUMENT:
-                config.UPSTOX_SESSION.unsubscribe(config.UPSTOX_SESSION.get_instrument_by_symbol('NSE_EQ', stock),
-                                                  LiveFeedType.LTP)
-                LOG.info("%s - Live feed unsubscription successful.", stock)
-            break
+            if exchange == 'NSE_EQ':
+                for stock in config.TRADE_INSTRUMENT:
+                    config.UPSTOX_SESSION.unsubscribe(config.UPSTOX_SESSION.get_instrument_by_symbol('NSE_EQ', stock),
+                                                      LiveFeedType.LTP)
+                    LOG.info("%s - NSE_EQ -Live feed unsubscription successful.", stock)
+                break
+
+            if exchange == 'MCX_FO':
+                for stock in config.TRADE_INSTRUMENT:
+                    config.UPSTOX_SESSION.unsubscribe(config.UPSTOX_SESSION.get_instrument_by_symbol('MCX_FO', "CRUDEOIL18DECFUT"),
+                                                    LiveFeedType.LTP)
+                    LOG.info("%s - MCX_FO - Live feed unsubscription successful.", stock)
+                break
 
         except Exception as e:
             LOG.error("Exception during unsubscription. Attempt:%d", retry)
             retry = retry + 1
-            if retry==5:
+            if retry == 5:
                 LOG.error("All retries failed for live feed unsubscription. Exiting Datafetcher")
                 return -1
+    return True
 
-    """
-    Perform a fresh subscription.
-    """
+
+def subscribe_stocks(exchange):
+    if exchange not in ['NSE_EQ','NSE_FO','BSE_EQ', 'BSE_FO','MCX_FO']:
+        LOG.error("Invalid Exchange. Stock subscprition failed.")
+        return False
+
     retry = 1
     while (retry <= 5):
         try:
-            for stock in config.TRADE_INSTRUMENT:
-                config.UPSTOX_SESSION.subscribe(config.UPSTOX_SESSION.get_instrument_by_symbol('NSE_EQ', stock),
-                                                  LiveFeedType.LTP)
-                LOG.info("%s - Live feed subscription successful.", stock)
-            break
+            if exchange=='NSE_EQ':
+                for stock in config.TRADE_INSTRUMENT:
+                    config.UPSTOX_SESSION.subscribe(config.UPSTOX_SESSION.get_instrument_by_symbol('NSE_EQ', stock),
+                                                      LiveFeedType.LTP)
+                    LOG.info("%s - NSE_EQ - Live feed subscription successful.", stock)
+                break
+
+            if exchange=='MCX_FO':
+                for stock in config.TRADE_INSTRUMENT:
+                    config.UPSTOX_SESSION.subscribe(config.UPSTOX_SESSION.get_instrument_by_symbol('MCX_FO', stock),
+                                                    LiveFeedType.LTP)
+                    LOG.info("%s - MCX_FO -Live feed subscription successful.", stock)
+                break
 
         except Exception as e:
             LOG.error("Exception during subscription. Attempt:%d", retry)
@@ -364,6 +390,26 @@ def main_upstox():
             if retry == 5:
                 LOG.error("All retries failed for live feed subscription. Exiting Datafetcher")
                 return -1
+
+
+
+def main_upstox():
+    config.UPSTOX_SESSION.set_on_quote_update(event_handler_quote_update)
+    config.UPSTOX_SESSION.get_master_contract('NSE_EQ')
+    #config.UPSTOX_SESSION.get_master_contract('NSE_FO')
+    #config.UPSTOX_SESSION.get_master_contract('MCX_FO')
+
+    """
+    First unsubscribe the stocks.
+    """
+    unsubscribe_stocks('NSE_EQ')
+    #unsubscribe_stocks('MCX_FO')
+
+    """
+    Perform a fresh subscription.
+    """
+    subscribe_stocks('NSE_EQ')
+    #subscribe_stocks('MCX_FO')
 
     LOG.info("Starting the websocket...")
     config.UPSTOX_SESSION.start_websocket(True)
@@ -397,8 +443,20 @@ def main():
         return False
 
     return
+
 """
 if __name__ == '__main__':
+    import config as CONFIG
+    from authentication import Authenticate
+
+    CONFIG.init()
+
+    auth = Authenticate()
+    login_status = auth.login()
+    if not login_status:
+        print("Authentication failed. Exiting...")
+        os._exit(1)
+
     main()
-    pass
 """
+
