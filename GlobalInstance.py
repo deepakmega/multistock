@@ -73,15 +73,15 @@ class GlobalInst(object):
 
         fetcher_t = Thread(target=dataFetcher.main)
         fetcher_t.start()
-        time.sleep(100)
+        time.sleep(90)
 
         historical_t = Thread(target=historicalDataMgmt.main)
         historical_t.start()
-        time.sleep(30)
+        time.sleep(10)
 
         optchain_t = Thread(target=option_chain.main)
         optchain_t.start()
-        time.sleep(60)
+        time.sleep(30)
 
         sma_t = Thread(target=simpleMovingAvg.main)
         sma_t.start()
@@ -91,6 +91,7 @@ class GlobalInst(object):
 
         processor_t = Thread(target=processor.main)
         processor_t.start()
+
 
         return
 

@@ -147,11 +147,16 @@ class SMA_:
                     self.LOG.error("\n%s\n", str(e))
                     continue
 
+
                 try:
                     CONFIG.MULTISTOCK[stock]['1DAY']['10SMA'] = round(
                         (ta.SMA(np.array(CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'].tail(10).close.values), timeperiod=10)[-1]), 2)
                     CONFIG.MULTISTOCK[stock]['1DAY']['50SMA'] = round(
                         (ta.SMA(np.array(CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'].tail(50).close.values), timeperiod=50)[-1]), 2)
+                    day_50sma_l = round(
+                        (ta.SMA(np.array(CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'].tail(50).low.values), timeperiod=50)[-1]), 2)
+                    day_50sma_h = round(
+                        (ta.SMA(np.array(CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'].tail(50).high.values), timeperiod=50)[-1]), 2)
                     CONFIG.MULTISTOCK[stock]['1DAY']['100SMA'] = round(
                         (ta.SMA(np.array(CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'].tail(100).close.values), timeperiod=100)[-1]), 2)
                     CONFIG.MULTISTOCK[stock]['1DAY']['150SMA'] = round(
@@ -168,6 +173,10 @@ class SMA_:
                         (ta.SMA(np.array(CONFIG.MULTISTOCK[stock]['1WEEK']['TICKS'].tail(10).close.values), timeperiod=10)[-1]), 2)
                     CONFIG.MULTISTOCK[stock]['1WEEK']['50SMA'] = round(
                         (ta.SMA(np.array(CONFIG.MULTISTOCK[stock]['1WEEK']['TICKS'].tail(50).close.values), timeperiod=50)[-1]), 2)
+                    week_50sma_l = round(
+                        (ta.SMA(np.array(CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'].tail(50).low.values), timeperiod=50)[-1]), 2)
+                    week_50sma_h = round(
+                        (ta.SMA(np.array(CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'].tail(50).high.values), timeperiod=50)[-1]), 2)
                     CONFIG.MULTISTOCK[stock]['1WEEK']['100SMA'] = round(
                         (ta.SMA(np.array(CONFIG.MULTISTOCK[stock]['1WEEK']['TICKS'].tail(100).close.values), timeperiod=100)[-1]), 2)
                     CONFIG.MULTISTOCK[stock]['1WEEK']['150SMA'] = round(
@@ -178,6 +187,7 @@ class SMA_:
                     self.LOG.error("%s - Exception occured during 1Week SMA calculation.", stock)
                     self.LOG.error("\n%s\n", str(e))
                     continue
+
 
                 try:
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['5Min', '10SMA'] = CONFIG.MULTISTOCK[stock]['5MIN']['10SMA']
@@ -225,18 +235,21 @@ class SMA_:
 
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1D', '10SMA'] = CONFIG.MULTISTOCK[stock]['1DAY']['10SMA']
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1D', '50SMA'] = CONFIG.MULTISTOCK[stock]['1DAY']['50SMA']
+                    CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1D', '50SMAL'] = day_50sma_l
+                    CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1D', '50SMAH'] = day_50sma_h
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1D', '100SMA'] = CONFIG.MULTISTOCK[stock]['1DAY']['100SMA']
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1D', '150SMA'] = CONFIG.MULTISTOCK[stock]['1DAY']['150SMA']
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1D', '200SMA'] = CONFIG.MULTISTOCK[stock]['1DAY']['200SMA']
 
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1W', '10SMA'] = CONFIG.MULTISTOCK[stock]['1WEEK']['10SMA']
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1W', '50SMA'] = CONFIG.MULTISTOCK[stock]['1WEEK']['50SMA']
+                    CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1W', '50SMAL'] = week_50sma_l
+                    CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1W', '50SMAH'] = week_50sma_h
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1W', '100SMA'] = CONFIG.MULTISTOCK[stock]['1WEEK']['100SMA']
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1W', '150SMA'] = CONFIG.MULTISTOCK[stock]['1WEEK']['150SMA']
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1W', '200SMA'] = CONFIG.MULTISTOCK[stock]['1WEEK']['200SMA']
 
 
-                    """
                     if stock:
                         if CONFIG.MULTISTOCK[stock]['CMP']:
                             if not CONFIG.MULTISTOCK[stock]['DataFrame'].empty:
@@ -246,19 +259,22 @@ class SMA_:
                                                   CONFIG.MULTISTOCK[stock]['DataFrame'],
                                                   CONFIG.MULTISTOCK[stock]['Option_chain'])
                                 else:
-                                    print("Option chain is None")
+                                    self.LOG.error("Option chain is None")
                             else:
-                                print("Dataframe is None")
+                                self.LOG.error("Dataframe is None")
                         else:
-                            print("CMP is None")
+                            self.LOG.error("CMP is None")
                     else:
-                        print("Stock is None")
-                    """
+                        self.LOG.error("Stock is None")
 
-                    self.LOG.info("\nStock:%s, LTP:%f \n %s\n%s\n", stock,
-                                  CONFIG.MULTISTOCK[stock]['CMP'],
-                                  CONFIG.MULTISTOCK[stock]['DataFrame'],
-                                  CONFIG.MULTISTOCK[stock]['Option_chain'])
+                    """
+                    if not CONFIG.MULTISTOCK[stock]['DataFrame'].empty and \
+                        not CONFIG.MULTISTOCK[stock]['DataFrame']['Option_chain'].empty:
+                        self.LOG.info("\nStock:%s, LTP:%f \n%s\n %s\n", stock,
+                                        CONFIG.MULTISTOCK[stock]['CMP'],
+                                        CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'].tail(1),
+                                        CONFIG.MULTISTOCK[stock]['DataFrame'])
+                    """
 
 
                 except Exception as e:

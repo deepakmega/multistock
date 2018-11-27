@@ -103,6 +103,26 @@ class Bollingerband:
                     self.LOG.error("\n%s\n",str(e))
                     continue
 
+                try:
+                    BB_out = ta.BBANDS(np.array(CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'].tail(50).close.values),
+                                       timeperiod=50)
+                    CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1D', 'BB_50_UP'] = round(BB_out[self.uband][-1], 2)
+                    CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1D', 'BB_50_DOWN'] = round(BB_out[self.lband][-1], 2)
+                except Exception as e:
+                    self.LOG.error("%s - Exception occured during Bollinger Band calculation 1Day data.", stock)
+                    self.LOG.error("\n%s\n", str(e))
+                    continue
+
+                try:
+                    BB_out = ta.BBANDS(np.array(CONFIG.MULTISTOCK[stock]['1WEEK']['TICKS'].tail(50).close.values),
+                                       timeperiod=50)
+                    CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1W', 'BB_50_UP'] = round(BB_out[self.uband][-1], 2)
+                    CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1W', 'BB_50_DOWN'] = round(BB_out[self.lband][-1], 2)
+                except Exception as e:
+                    self.LOG.error("%s - Exception occured during Bollinger Band calculation 1Week data.", stock)
+                    self.LOG.error("\n%s\n", str(e))
+                    continue
+
         return
 
 

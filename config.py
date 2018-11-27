@@ -7,6 +7,7 @@ Created on 09-Aug-2017
 
 import json
 import pandas as pd
+import threading
 
 
 #######################################################################################################################
@@ -25,6 +26,8 @@ OPEN = 0
 HIGH = 1
 LOW = 2
 CLOSE = 3
+MUTEX = threading.Lock()
+
 #######################################################################################################################
 
 
@@ -46,7 +49,8 @@ TRADE_INSTRUMENT = ["RELIANCE", "RELINFRA", "INFY", "ICICIBANK", "AXISBANK", "AU
                     "HEG", "GNFC", "GRUH", "BBTC", "LTI", "CYIENT", "NAUKRI", "GRAPHITE", "IBVENTURES", "DBL", "VIPIND", "ARVIND",
                     "RAYMOND", "DALMIABHA", "CESC", "WOCKPHARMA", "CAPF", "MFSL", "GODFRYPHLP", "JUSTDIAL", "BEML"]
 
-TRADE_INSTRUMENT_MCX_FO = ["CRUDEOIL18DECFUT"]
+
+TRADE_INSTRUMENT_MCX_FO = ["CRUDEOIL18DECFUT","CRUDEOIL19JANFUT"]
 
 #For testing...
 #TRADE_INSTRUMENT = TRADE_INSTRUMENT_MCX_FO
@@ -63,10 +67,10 @@ OPEN_MIN_COMMODITY = 1
 CLOSE_HR_COMMODITY = 23
 CLOSE_MIN_COMMODITY = 30
 
-OPEN_HR = 7
+OPEN_HR = 0
 OPEN_MIN = 15
 
-CLOSE_HR = 15
+CLOSE_HR = 23
 CLOSE_MIN = 30
 #######################################################################################################################
 
@@ -173,7 +177,10 @@ for stock in TRADE_INSTRUMENT:
                                                   columns=['10SMA', '50SMAL','50SMA','50SMAH', '100SMA', '150SMA', '200SMA', '400SMA',
                                                            'BB_50_UP', 'BB_50_DOWN'])
 
-    MULTISTOCK[stock]['Option_chain'] = pd.DataFrame()
+    MULTISTOCK[stock]['Option_chain'] = pd.DataFrame(0, index=range(0,3),
+                                                                    columns=['Call-OI','Call-chngInOi','Call-Vol',
+                                                                             'Strike','Put-Vol','Put-chngInOi',
+                                                                             'Put-OI','Direction'])
 #######################################################################################################################
 
 
@@ -211,7 +218,6 @@ def init():
     global KITE, MARKET_LTP, CRUDE_PIP, NIFTY_PIP, PIP, NIFTY_PROFIT_MARGIN, NIFTY_EXPECTED_ATR, COMMODITY_PROFIT_MARGIN
     global save2file_flag
     global ohlc_data, plotted
-
 
 
     save2file_flag = True

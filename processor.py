@@ -56,14 +56,22 @@ class Processor:
                     low = float(CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'].tail(1).low.values[-1])
                     close = float(CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'].tail(1).close.values[-1])
                     day_10sma = float(CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1D','10SMA'])
+                    if close == None:
+                        self.LOG.error("Close value is None for stock:", stock)
+                        return
+
+                    if CONFIG.MULTISTOCK[stock]['CMP'] == None:
+                        self.LOG.error("CMP value is None for stock:", stock)
+                        return
 
                     if open>0 and high>0 and low>0 and close>0 and day_10sma>0 and \
                         (CONFIG.MULTISTOCK[stock]['CMP'] > day_10sma):
-                        if (close > float(CONFIG.MULTISTOCK[stock]['DataFrame'].loc['15Min','50SMAL'])) and \
-                            (close > float(CONFIG.MULTISTOCK[stock]['DataFrame'].loc['15Min','50SMA'])) and \
-                                (close > float(CONFIG.MULTISTOCK[stock]['DataFrame'].loc['15Min', '50SMAH'])) and \
-                                    (close > float(CONFIG.MULTISTOCK[stock]['DataFrame'].loc['15Min', '100SMA'])) and \
-                                        (close > float(CONFIG.MULTISTOCK[stock]['DataFrame'].loc['15Min', '200SMA'])):
+                        if (close > float(CONFIG.MULTISTOCK[stock]['DataFrame'].loc['15Min','10SMA'])) and \
+                            (close > float(CONFIG.MULTISTOCK[stock]['DataFrame'].loc['15Min','50SMAL'])) and \
+                                (close > float(CONFIG.MULTISTOCK[stock]['DataFrame'].loc['15Min','50SMA'])) and \
+                                    (close > float(CONFIG.MULTISTOCK[stock]['DataFrame'].loc['15Min', '50SMAH'])) and \
+                                        (close > float(CONFIG.MULTISTOCK[stock]['DataFrame'].loc['15Min', '100SMA'])) and \
+                                            (close > float(CONFIG.MULTISTOCK[stock]['DataFrame'].loc['15Min', '200SMA'])):
 
                             self.LOG.info("\nStock:%s, LTP:%f \n %s\n%s\n%s\n", stock,
                                             CONFIG.MULTISTOCK[stock]['CMP'],

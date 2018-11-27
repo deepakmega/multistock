@@ -5,7 +5,6 @@ Created on 04-Aug-2017
 Kite APIs to fetch the stocks
 '''
 
-import config
 import datetime
 from kiteconnect import KiteTicker
 import logging
@@ -13,6 +12,9 @@ import time
 import save2file
 from upstox_api.api import *
 import pandas as pd
+import config as CONFIG
+from authentication import Authenticate
+
 
 '''
     Intially starttime is the start time receiving the ticks and endtime is starttime + time interval (Defined in config)
@@ -37,24 +39,24 @@ def on_ticks(ws, ticks):
         tick_timestamp = eachscript['timestamp']
         tick_price = float(eachscript['last_price'])
         local_tick_dict = {}
-        if config.trading_exchange == "NSE" or config.trading_exchange == "NFO":
-            market_end_time = datetime.datetime.now().replace(hour=config.CLOSE_HR,
-                                                              minute=config.CLOSE_MIN, second=0,
+        if CONFIG.trading_exchange == "NSE" or CONFIG.trading_exchange == "NFO":
+            market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR,
+                                                              minute=CONFIG.CLOSE_MIN, second=0,
                                                               microsecond=0)
-        elif config.trading_exchange == "MCX":
-            market_end_time = datetime.datetime.now().replace(hour=config.CLOSE_HR_COMMODITY,
-                                                              minute=config.CLOSE_MIN_COMMODITY, second=0,
+        elif CONFIG.trading_exchange == "MCX":
+            market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR_COMMODITY,
+                                                              minute=CONFIG.CLOSE_MIN_COMMODITY, second=0,
                                                               microsecond=0)
 
-        if (config.trading_exchange == "NSE" or config.trading_exchange == "NFO" or config.trading_exchange == "MCX"):
+        if (CONFIG.trading_exchange == "NSE" or CONFIG.trading_exchange == "NFO" or CONFIG.trading_exchange == "MCX"):
             if (datetime.datetime.now() >= market_end_time) or \
-                    (tick_timestamp.time() < datetime.time(config.OPEN_HR, config.OPEN_MIN, 0, 0)):
+                    (tick_timestamp.time() < datetime.time(CONFIG.OPEN_HR, CONFIG.OPEN_MIN, 0, 0)):
                 """ if time is near to market openning time """
-                std_openning_time = datetime.datetime.now().replace(hour=config.OPEN_HR, minute=0, second=0,
+                std_openning_time = datetime.datetime.now().replace(hour=CONFIG.OPEN_HR, minute=0, second=0,
                                                                     microsecond=0)
                 if (datetime.datetime.now() >= std_openning_time) and \
-                        (datetime.datetime.now() < std_openning_time.replace(hour=config.OPEN_HR,
-                                                                             minute=config.OPEN_MIN,
+                        (datetime.datetime.now() < std_openning_time.replace(hour=CONFIG.OPEN_HR,
+                                                                             minute=CONFIG.OPEN_MIN,
                                                                              second=0, microsecond=0)):
                     print("Instrument_token=", eachscript['instrument_token'], " Waiting for indian Market to open")
                     LOG[eachscript['instrument_token']].info("Waiting for indian Market to open")
@@ -63,14 +65,14 @@ def on_ticks(ws, ticks):
                 LOG[eachscript['instrument_token']].info("No Candles available after NSE Market hours")
                 print("Instrument_token=", eachscript['instrument_token'],
                       " No Candles available after NSE Market hours")
-                config.GlobalInstObj.exit_system()
+                CONFIG.GlobalInstObj.exit_system()
 
             else:
                 if (endtime[eachscript['instrument_token']] == None):
-                    if (tick_timestamp.minute % config.time_interval != 0):
+                    if (tick_timestamp.minute % CONFIG.time_interval != 0):
                         return
 
-                    if tick_timestamp < config.SYSTEM_STARTED_TIME:
+                    if tick_timestamp < CONFIG.SYSTEM_STARTED_TIME:
                         LOG[eachscript['instrument_token']].error(
                             "Found some spurious ticks. Waitting for correct start of time.")
                         return
@@ -86,11 +88,11 @@ def on_ticks(ws, ticks):
                     ohlc = [open, high, low, close]
                     dict_key[eachscript['instrument_token']] = str(tick_timestamp.replace(second=0, microsecond=0))
                     local_tick_dict[dict_key[eachscript['instrument_token']]] = ohlc
-                    config.MULTISTOCK[eachscript['instrument_token']]['ticks'].update(local_tick_dict)
+                    CONFIG.MULTISTOCK[eachscript['instrument_token']]['ticks'].update(local_tick_dict)
                     LOG[eachscript['instrument_token']].info("Primary candle:interval=%d ,ohlc=%s, ltp=%f",
-                                                             config.time_interval, str(local_tick_dict),
+                                                             CONFIG.time_interval, str(local_tick_dict),
                                                              close)
-                    if config.time_interval == 30:
+                    if CONFIG.time_interval == 30:
                         if (tick_timestamp.hour == 15 and tick_timestamp.minute >= 15 and tick_timestamp.minute < 30):
                             endtime[eachscript['instrument_token']] = datetime.datetime(tick_timestamp.year,
                                                                                         tick_timestamp.month,
@@ -106,7 +108,7 @@ def on_ticks(ws, ticks):
                                                                                         tick_timestamp.month,
                                                                                         tick_timestamp.day,
                                                                                         tick_timestamp.hour + 1, 14, 59)
-                    elif config.time_interval == 60:
+                    elif CONFIG.time_interval == 60:
                         if (tick_timestamp.hour == 15 and tick_timestamp.minute >= 15 and tick_timestamp.minute < 30):
                             endtime[eachscript['instrument_token']] = datetime.datetime(tick_timestamp.year,
                                                                                         tick_timestamp.month,
@@ -123,21 +125,21 @@ def on_ticks(ws, ticks):
                                                                                         tick_timestamp.day,
                                                                                         tick_timestamp.hour, 14, 59)
                     else:
-                        if (tick_timestamp.minute + config.time_interval - (
-                                tick_timestamp.minute % config.time_interval) - 1 >= 60):
+                        if (tick_timestamp.minute + CONFIG.time_interval - (
+                                tick_timestamp.minute % CONFIG.time_interval) - 1 >= 60):
                             endtime[eachscript['instrument_token']] = datetime.datetime(tick_timestamp.year,
                                                                                         tick_timestamp.month,
                                                                                         tick_timestamp.day,
                                                                                         tick_timestamp.hour + 1, (
-                                                                                                tick_timestamp.minute + config.time_interval - tick_timestamp.minute % config.time_interval - 1) % 60,
+                                                                                                tick_timestamp.minute + CONFIG.time_interval - tick_timestamp.minute % CONFIG.time_interval - 1) % 60,
                                                                                         59)
                         else:
                             endtime[eachscript['instrument_token']] = datetime.datetime(tick_timestamp.year,
                                                                                         tick_timestamp.month,
                                                                                         tick_timestamp.day,
                                                                                         tick_timestamp.hour,
-                                                                                        tick_timestamp.minute + config.time_interval - (
-                                                                                                tick_timestamp.minute % config.time_interval) - 1,
+                                                                                        tick_timestamp.minute + CONFIG.time_interval - (
+                                                                                                tick_timestamp.minute % CONFIG.time_interval) - 1,
                                                                                         59)
                 elif (tick_timestamp <= endtime[eachscript['instrument_token']]):
                     temp_tick[eachscript['instrument_token']].append(tick_price)
@@ -150,13 +152,13 @@ def on_ticks(ws, ticks):
 
                     ohlc = [open, high, low, close]
                     local_tick_dict[dict_key[eachscript['instrument_token']]] = ohlc
-                    config.MULTISTOCK[eachscript['instrument_token']]['ticks'].update(local_tick_dict)
+                    CONFIG.MULTISTOCK[eachscript['instrument_token']]['ticks'].update(local_tick_dict)
                     LOG[eachscript['instrument_token']].info("Primary candle:interval=%d ,ohlc=%s, ltp=%f",
-                                                             config.time_interval,
+                                                             CONFIG.time_interval,
                                                              str(local_tick_dict),
                                                              close)
                 else:
-                    # print(config.MULTISTOCK)
+                    # print(CONFIG.MULTISTOCK)
                     del temp_tick[eachscript['instrument_token']][:]
                     temp_tick[eachscript['instrument_token']].append(tick_price)
                     open = temp_tick[eachscript['instrument_token']][0]
@@ -168,19 +170,19 @@ def on_ticks(ws, ticks):
 
                     ohlc = [open, high, low, close]
                     dict_key[eachscript['instrument_token']] = str(tick_timestamp.replace(second=0, microsecond=0))
-                    if (tick_timestamp.minute % config.time_interval != 0):  # A case when socket disconnection happens
-                        cur_min = tick_timestamp.minute - (tick_timestamp.minute % config.time_interval)
+                    if (tick_timestamp.minute % CONFIG.time_interval != 0):  # A case when socket disconnection happens
+                        cur_min = tick_timestamp.minute - (tick_timestamp.minute % CONFIG.time_interval)
                         cur_mkt_idx = tick_timestamp.replace(minute=cur_min, second=0, microsecond=0)
                         tick_timestamp = cur_mkt_idx
                         dict_key[eachscript['instrument_token']] = str(cur_mkt_idx)
 
                     local_tick_dict[dict_key[eachscript['instrument_token']]] = ohlc
-                    config.MULTISTOCK[eachscript['instrument_token']]['ticks'].update(local_tick_dict)
+                    CONFIG.MULTISTOCK[eachscript['instrument_token']]['ticks'].update(local_tick_dict)
                     LOG[eachscript['instrument_token']].info("Primary candle:interval=%d ,ohlc=%s, ltp=%f",
-                                                             config.time_interval,
+                                                             CONFIG.time_interval,
                                                              str(local_tick_dict),
                                                              close)
-                    if config.time_interval == 30:
+                    if CONFIG.time_interval == 30:
                         if (tick_timestamp.hour == 15 and tick_timestamp.minute >= 15 and tick_timestamp.minute < 30):
                             endtime[eachscript['instrument_token']] = datetime.datetime(tick_timestamp.year,
                                                                                         tick_timestamp.month,
@@ -196,7 +198,7 @@ def on_ticks(ws, ticks):
                                                                                         tick_timestamp.month,
                                                                                         tick_timestamp.day,
                                                                                         tick_timestamp.hour + 1, 14, 59)
-                    elif config.time_interval == 60:
+                    elif CONFIG.time_interval == 60:
                         if (tick_timestamp.hour == 15 and tick_timestamp.minute >= 15 and tick_timestamp.minute < 30):
                             endtime[eachscript['instrument_token']] = datetime.datetime(tick_timestamp.year,
                                                                                         tick_timestamp.month,
@@ -213,27 +215,27 @@ def on_ticks(ws, ticks):
                                                                                         tick_timestamp.day,
                                                                                         tick_timestamp.hour, 14, 59)
                     else:
-                        if (tick_timestamp.minute + config.time_interval - (
-                                tick_timestamp.minute % config.time_interval) - 1 >= 60):
+                        if (tick_timestamp.minute + CONFIG.time_interval - (
+                                tick_timestamp.minute % CONFIG.time_interval) - 1 >= 60):
                             endtime[eachscript['instrument_token']] = datetime.datetime(tick_timestamp.year,
                                                                                         tick_timestamp.month,
                                                                                         tick_timestamp.day,
                                                                                         tick_timestamp.hour + 1, (
-                                                                                                tick_timestamp.minute + config.time_interval - tick_timestamp.minute % config.time_interval - 1) % 60,
+                                                                                                tick_timestamp.minute + CONFIG.time_interval - tick_timestamp.minute % CONFIG.time_interval - 1) % 60,
                                                                                         59)
                         else:
                             endtime[eachscript['instrument_token']] = datetime.datetime(tick_timestamp.year,
                                                                                         tick_timestamp.month,
                                                                                         tick_timestamp.day,
                                                                                         tick_timestamp.hour,
-                                                                                        tick_timestamp.minute + config.time_interval - (
-                                                                                                tick_timestamp.minute % config.time_interval) - 1,
+                                                                                        tick_timestamp.minute + CONFIG.time_interval - (
+                                                                                                tick_timestamp.minute % CONFIG.time_interval) - 1,
                                                                                         59)
 
 
 def on_connect(ws, response):
-    ws.subscribe(config.TRADE_INSTRUMENT)
-    ws.set_mode(ws.MODE_FULL, config.TRADE_INSTRUMENT)
+    ws.subscribe(CONFIG.TRADE_INSTRUMENT)
+    ws.set_mode(ws.MODE_FULL, CONFIG.TRADE_INSTRUMENT)
 
 
 def main_kite():
@@ -241,92 +243,57 @@ def main_kite():
     handler = {}
     timestr = time.strftime("%Y-%m-%d.%H%M%S")
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    for i in config.TRADE_INSTRUMENT:
+    for i in CONFIG.TRADE_INSTRUMENT:
         LOG[i] = None
         endtime[i] = None
         temp_tick[i] = []
         dict_key[i] = ""
         handler[i] = logging.FileHandler(
-            filename=config.STD_PATH + 'logs/DataFetcher/DataFetcher-' + str(i) + '-' + timestr + '.log', mode='w')
+            filename=CONFIG.STD_PATH + 'logs/DataFetcher/DataFetcher-' + str(i) + '-' + timestr + '.log', mode='w')
         handler[i].setFormatter(formatter)
         LOG[i] = logging.getLogger("DataFetcher-" + str(i))
         LOG[i].setLevel(logging.INFO)
         LOG[i].addHandler(handler[i])
 
-    kws = KiteTicker(config.API_KEY, config.ACCESS_TOKEN, config.CLIENT_ID)
+    kws = KiteTicker(CONFIG.API_KEY, CONFIG.ACCESS_TOKEN, CONFIG.CLIENT_ID)
     kws.on_ticks = on_ticks
     kws.on_connect = on_connect
     kws.connect()
 
 
+def event_handler_quote_disconnect(err):
+    """Auto connect the websocket if it's disrupted"""
+    print("Socket disconnected. Will auto reconnect - ", err)
+    LOG.error("Socket disconnected. Will auto reconnect - %s", err)
+
+    CONFIG.UPSTOX_SESSION.start_websocket(True)
+    condition = threading.Condition()
+    condition.acquire()
+    condition.wait()
+
+
+"""
+As of today, the quote update is getting invoked for each individual stock
+"""
 def event_handler_quote_update(message):
-    stock_name = str(message['symbol']).upper()
-
-    if (stock_name in config.TRADE_INSTRUMENT):
+    try:
+        stock_name = str(message['symbol']).upper()
         timestamp = datetime.fromtimestamp(float(message['timestamp']) / 1000.0)
-        if not (timestamp.hour > 23 and timestamp.minute >= config.CLOSE_MIN):
-            try:
-                config.MULTISTOCK[stock_name]['CMP'] = float(format(float(message['ltp']), '.2f'))
-                config.MULTISTOCK[stock_name]['LTP'][timestamp] = float(format(float(message['ltp']), '.2f'))
-                df = pd.DataFrame(list(config.MULTISTOCK[stock_name]['LTP'].items()), columns=['Date', 'DateValue'])
-                data = df.set_index(['Date'])
-                """The LTP data after resample are upto the current timeframe accuracy.
-                """
-                data_5min = data['DateValue'].resample('5min').ohlc()
-                data_10min = data['DateValue'].resample('10min').ohlc()
-                data_15min = data['DateValue'].resample('15min', base=15).ohlc()
-                data_30min = data['DateValue'].resample('30Min', base=15).ohlc()
-                data_1hour = data['DateValue'].resample('60Min', base=15).ohlc()
-
-            except Exception as e:
-                LOG.error("Exception during resampling.")
-                LOG.error("%s", str(e))
-                return
-
-            if not config.MULTISTOCK[stock_name]['5MIN']['TICKS'].empty:
-                config.MULTISTOCK[stock_name]['5MIN']['TICKS'] \
-                    = pd.concat([config.MULTISTOCK[stock_name]['5MIN']['TICKS'], data_5min]).drop_duplicates()
-                config.MULTISTOCK[stock_name]['5MIN']['TICKS'] = \
-                    config.MULTISTOCK[stock_name]['5MIN']['TICKS'][
-                        ~config.MULTISTOCK[stock_name]['5MIN']['TICKS'].index.duplicated(keep='last')]
-                LOG.info("%s - 5Min TICKS\n%s\n", stock_name, config.MULTISTOCK[stock_name]['5MIN']['TICKS'].tail(3))
-
-            if not config.MULTISTOCK[stock_name]['10MIN']['TICKS'].empty:
-                config.MULTISTOCK[stock_name]['10MIN']['TICKS'] \
-                    = pd.concat([config.MULTISTOCK[stock_name]['10MIN']['TICKS'], data_10min]).drop_duplicates()
-                config.MULTISTOCK[stock_name]['10MIN']['TICKS'] = \
-                    config.MULTISTOCK[stock_name]['10MIN']['TICKS'][
-                        ~config.MULTISTOCK[stock_name]['10MIN']['TICKS'].index.duplicated(keep='last')]
-                LOG.info("%s - 10Min TICKS\n%s\n", stock_name, config.MULTISTOCK[stock_name]['10MIN']['TICKS'].tail(3))
-
-            if not config.MULTISTOCK[stock_name]['15MIN']['TICKS'].empty:
-                config.MULTISTOCK[stock_name]['15MIN']['TICKS'] \
-                    = pd.concat([config.MULTISTOCK[stock_name]['15MIN']['TICKS'], data_15min]).drop_duplicates()
-                config.MULTISTOCK[stock_name]['15MIN']['TICKS'] = \
-                    config.MULTISTOCK[stock_name]['15MIN']['TICKS'][
-                        ~config.MULTISTOCK[stock_name]['15MIN']['TICKS'].index.duplicated(keep='last')]
-                LOG.info("%s - 15Min TICKS\n%s\n", stock_name, config.MULTISTOCK[stock_name]['15MIN']['TICKS'].tail(3))
-
-            if not config.MULTISTOCK[stock_name]['30MIN']['TICKS'].empty:
-                config.MULTISTOCK[stock_name]['30MIN']['TICKS'] \
-                    = pd.concat([config.MULTISTOCK[stock_name]['30MIN']['TICKS'], data_30min]).drop_duplicates()
-                config.MULTISTOCK[stock_name]['30MIN']['TICKS'] = \
-                    config.MULTISTOCK[stock_name]['30MIN']['TICKS'][
-                        ~config.MULTISTOCK[stock_name]['30MIN']['TICKS'].index.duplicated(keep='last')]
-                LOG.info("%s - 30Min TICKS\n%s\n", stock_name, config.MULTISTOCK[stock_name]['30MIN']['TICKS'].tail(3))
-
-            if not config.MULTISTOCK[stock_name]['1HOUR']['TICKS'].empty:
-                config.MULTISTOCK[stock_name]['1HOUR']['TICKS'] \
-                    = pd.concat([config.MULTISTOCK[stock_name]['1HOUR']['TICKS'], data_1hour]).drop_duplicates()
-                config.MULTISTOCK[stock_name]['1HOUR']['TICKS'] = \
-                    config.MULTISTOCK[stock_name]['1HOUR']['TICKS'][
-                        ~config.MULTISTOCK[stock_name]['1HOUR']['TICKS'].index.duplicated(keep='last')]
-                LOG.info("%s - 1Hour TICKS\n%s\n", stock_name, config.MULTISTOCK[stock_name]['1HOUR']['TICKS'].tail(3))
-
+        LOG.info("Quote Update: timestamp=%s %s", timestamp, str(message))
+        if (stock_name in CONFIG.TRADE_INSTRUMENT):
+            timestamp = datetime.fromtimestamp(float(message['timestamp']) / 1000.0)
+            if not (timestamp.hour > CONFIG.CLOSE_HR and timestamp.minute >= CONFIG.CLOSE_MIN):
+                CONFIG.MULTISTOCK[stock_name]['CMP'] = float(format(float(message['ltp']), '.2f'))
+                CONFIG.MULTISTOCK[stock_name]['LTP'][timestamp] = float(format(float(message['ltp']), '.2f'))
+            else:
+                LOG.error("%s - Not handling quotes as Current timestamp beyond trading time.", stock_name)
         else:
-            LOG.error("%s - Not handling quotes as Current timestamp beyond 3.30PM.", stock_name)
-    else:
-        LOG.error("%s - not available in instrument list", stock_name)
+            LOG.error("%s - not available in instrument list", stock_name)
+            return
+
+    except Exception as e:
+        LOG.error("Exception during quote update event handler.")
+        LOG.error("%s", str(e))
         return
 
     return
@@ -340,15 +307,15 @@ def unsubscribe_stocks(exchange):
     while (retry <= 5):
         try:
             if exchange == 'NSE_EQ':
-                for stock in config.TRADE_INSTRUMENT:
-                    config.UPSTOX_SESSION.unsubscribe(config.UPSTOX_SESSION.get_instrument_by_symbol('NSE_EQ', stock),
+                for stock in CONFIG.TRADE_INSTRUMENT:
+                    CONFIG.UPSTOX_SESSION.unsubscribe(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol('NSE_EQ', stock),
                                                       LiveFeedType.LTP)
                     LOG.info("%s - NSE_EQ -Live feed unsubscription successful.", stock)
                 break
 
             if exchange == 'MCX_FO':
-                for stock in config.TRADE_INSTRUMENT:
-                    config.UPSTOX_SESSION.unsubscribe(config.UPSTOX_SESSION.get_instrument_by_symbol('MCX_FO', "CRUDEOIL18DECFUT"),
+                for stock in CONFIG.TRADE_INSTRUMENT:
+                    CONFIG.UPSTOX_SESSION.unsubscribe(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol('MCX_FO', "CRUDEOIL18DECFUT"),
                                                     LiveFeedType.LTP)
                     LOG.info("%s - MCX_FO - Live feed unsubscription successful.", stock)
                 break
@@ -371,16 +338,16 @@ def subscribe_stocks(exchange):
     while (retry <= 5):
         try:
             if exchange=='NSE_EQ':
-                for stock in config.TRADE_INSTRUMENT:
-                    config.UPSTOX_SESSION.subscribe(config.UPSTOX_SESSION.get_instrument_by_symbol('NSE_EQ', stock),
-                                                      LiveFeedType.LTP)
+                for stock in CONFIG.TRADE_INSTRUMENT:
+                    CONFIG.UPSTOX_SESSION.subscribe(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol('NSE_EQ', stock),
+                                                      LiveFeedType.Full)
                     LOG.info("%s - NSE_EQ - Live feed subscription successful.", stock)
                 break
 
             if exchange=='MCX_FO':
-                for stock in config.TRADE_INSTRUMENT:
-                    config.UPSTOX_SESSION.subscribe(config.UPSTOX_SESSION.get_instrument_by_symbol('MCX_FO', stock),
-                                                    LiveFeedType.LTP)
+                for stock in CONFIG.TRADE_INSTRUMENT:
+                    CONFIG.UPSTOX_SESSION.subscribe(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol('MCX_FO', stock),
+                                                    LiveFeedType.Full)
                     LOG.info("%s - MCX_FO -Live feed subscription successful.", stock)
                 break
 
@@ -394,16 +361,18 @@ def subscribe_stocks(exchange):
 
 
 def main_upstox():
-    config.UPSTOX_SESSION.set_on_quote_update(event_handler_quote_update)
-    config.UPSTOX_SESSION.get_master_contract('NSE_EQ')
-    #config.UPSTOX_SESSION.get_master_contract('NSE_FO')
-    #config.UPSTOX_SESSION.get_master_contract('MCX_FO')
-
+    CONFIG.UPSTOX_SESSION.set_on_quote_update(event_handler_quote_update)
+    CONFIG.UPSTOX_SESSION.set_on_disconnect(event_handler_quote_disconnect)
+    CONFIG.UPSTOX_SESSION.get_master_contract('NSE_EQ')
+    #CONFIG.UPSTOX_SESSION.get_master_contract('NSE_FO')
+    #CONFIG.UPSTOX_SESSION.get_master_contract('MCX_FO')
+    #print(CONFIG.UPSTOX_SESSION.get_master_contract('MCX_FO'))
     """
     First unsubscribe the stocks.
     """
     unsubscribe_stocks('NSE_EQ')
     #unsubscribe_stocks('MCX_FO')
+
 
     """
     Perform a fresh subscription.
@@ -412,11 +381,11 @@ def main_upstox():
     #subscribe_stocks('MCX_FO')
 
     LOG.info("Starting the websocket...")
-    config.UPSTOX_SESSION.start_websocket(True)
-
+    CONFIG.UPSTOX_SESSION.start_websocket(True)
     condition = threading.Condition()
     condition.acquire()
     condition.wait()
+
 
     return
 
@@ -425,13 +394,13 @@ def main():
     global LOG
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     timestr = time.strftime("%Y-%m-%d.%H%M%S")
-    handler = logging.FileHandler(filename=config.STD_PATH + 'logs/DataFetcher-' + timestr + '.log', mode='w')
+    handler = logging.FileHandler(filename=CONFIG.STD_PATH + 'logs/DataFetcher-' + timestr + '.log', mode='w')
     handler.setFormatter(formatter)
     LOG = logging.getLogger("DataFetcher")
     LOG.setLevel(logging.INFO)
     LOG.addHandler(handler)
 
-    credentials_dict = json.load(open(config.STD_PATH + "configfiles/credentials_upstox.txt"))
+    credentials_dict = json.load(open(CONFIG.STD_PATH + "configfiles/credentials_upstox.txt"))
     if credentials_dict["BROKER"] == "UPSTOX":
         LOG.info("Websocket initialization for broker - UPSTOX")
         main_upstox()
@@ -444,13 +413,9 @@ def main():
 
     return
 
-"""
+
 if __name__ == '__main__':
-    import config as CONFIG
-    from authentication import Authenticate
-
     CONFIG.init()
-
     auth = Authenticate()
     login_status = auth.login()
     if not login_status:
@@ -458,5 +423,5 @@ if __name__ == '__main__':
         os._exit(1)
 
     main()
-"""
+
 
