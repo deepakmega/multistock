@@ -46,8 +46,8 @@ TRADE_INSTRUMENT = ["RELIANCE", "RELINFRA", "INFY", "ICICIBANK", "AXISBANK", "AU
                     "APOLLOHOSP", "CUMMINSIND", "GLENMARK", "CHOLAFIN", "BHARATFIN", "NIITTECH", "TATAELXSI", "PVR", "APLAPOLLO",
                     "SUNPHARMA", "SOBHA", "GODREJPROP", "BHARTIARTL", "MPHASIS", "WHIRLPOOL", "CRISIL", "GLAXO", "COLPAL", "PFIZER",
                     "GSKCONS", "KANSAINER", "SANOFI", "HEXAWARE", "SBIN", "YESBANK", "DHFL", "MGL", "GAIL", "ADANIPORTS", "ESCORTS",
-                    "HEG", "GNFC", "GRUH", "BBTC", "LTI", "CYIENT", "NAUKRI", "GRAPHITE", "IBVENTURES", "DBL", "VIPIND", "ARVIND",
-                    "RAYMOND", "DALMIABHA", "CESC", "WOCKPHARMA", "CAPF", "MFSL", "GODFRYPHLP", "JUSTDIAL", "BEML"]
+                    "HEG", "GNFC", "GRUH", "BBTC", "LTI", "CYIENT", "NAUKRI", "GRAPHITE", "IBVENTURES", "DBL", "VIPIND",
+                    "RAYMOND", "CESC", "WOCKPHARMA", "CAPF", "MFSL", "GODFRYPHLP", "JUSTDIAL", "BEML"]
 
 
 TRADE_INSTRUMENT_MCX_FO = ["CRUDEOIL18DECFUT","CRUDEOIL19JANFUT"]
@@ -70,7 +70,7 @@ CLOSE_MIN_COMMODITY = 30
 OPEN_HR = 0
 OPEN_MIN = 15
 
-CLOSE_HR = 23
+CLOSE_HR = 15
 CLOSE_MIN = 30
 #######################################################################################################################
 

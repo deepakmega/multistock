@@ -279,7 +279,7 @@ def event_handler_quote_update(message):
     try:
         stock_name = str(message['symbol']).upper()
         timestamp = datetime.fromtimestamp(float(message['timestamp']) / 1000.0)
-        LOG.info("Quote Update: timestamp=%s %s", timestamp, str(message))
+        LOG.info("Quote Update: %s - %s      ltp - %s", timestamp, stock_name, (message['ltp']))
         if (stock_name in CONFIG.TRADE_INSTRUMENT):
             timestamp = datetime.fromtimestamp(float(message['timestamp']) / 1000.0)
             if not (timestamp.hour > CONFIG.CLOSE_HR and timestamp.minute >= CONFIG.CLOSE_MIN):
@@ -414,6 +414,7 @@ def main():
     return
 
 
+"""
 if __name__ == '__main__':
     CONFIG.init()
     auth = Authenticate()
@@ -423,5 +424,5 @@ if __name__ == '__main__':
         os._exit(1)
 
     main()
-
+"""
 
