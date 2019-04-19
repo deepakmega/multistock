@@ -261,7 +261,7 @@ class SMA_:
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1W', '200SMA'] = CONFIG.MULTISTOCK[stock]['1WEEK']['200SMA']
                     CONFIG.MULTISTOCK[stock]['DataFrame'].loc['1W', '400SMA'] = CONFIG.MULTISTOCK[stock]['1WEEK']['400SMA']
 
-
+                    """
                     if stock:
                         if CONFIG.MULTISTOCK[stock]['CMP']:
                             if not CONFIG.MULTISTOCK[stock]['DataFrame'].empty:
@@ -278,6 +278,7 @@ class SMA_:
                             self.LOG.error("CMP is None")
                     else:
                         self.LOG.error("Stock is None")
+                    """
 
                     """
                     if not CONFIG.MULTISTOCK[stock]['DataFrame'].empty and \

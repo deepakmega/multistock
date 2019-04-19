@@ -5,6 +5,7 @@ Created on 04-Aug-2017
 Kite APIs to fetch the stocks
 '''
 
+import pdb
 import datetime
 from kiteconnect import KiteTicker
 import logging
@@ -278,18 +279,33 @@ As of today, the quote update is getting invoked for each individual stock
 def event_handler_quote_update(message):
     try:
         stock_name = str(message['symbol']).upper()
-        timestamp = datetime.fromtimestamp(float(message['timestamp']) / 1000.0)
-        LOG.info("Quote Update: %s - %s      ltp - %s", timestamp, stock_name, (message['ltp']))
-        if (stock_name in CONFIG.TRADE_INSTRUMENT):
-            timestamp = datetime.fromtimestamp(float(message['timestamp']) / 1000.0)
-            if not (timestamp.hour > CONFIG.CLOSE_HR and timestamp.minute >= CONFIG.CLOSE_MIN):
-                CONFIG.MULTISTOCK[stock_name]['CMP'] = float(format(float(message['ltp']), '.2f'))
-                CONFIG.MULTISTOCK[stock_name]['LTP'][timestamp] = float(format(float(message['ltp']), '.2f'))
+        timestamp = datetime.datetime.fromtimestamp(float(message['timestamp']) / 1000.0)
+
+        if message['exchange'] == 'NSE_EQ':
+            LOG.info("Quote Update: %s - %s      ltp - %s", timestamp, stock_name, (message['ltp']))
+            if (stock_name in CONFIG.TRADE_INSTRUMENT):
+                timestamp = datetime.datetime.fromtimestamp(float(message['timestamp']) / 1000.0)
+                if not (timestamp.hour > CONFIG.CLOSE_HR and timestamp.minute >= CONFIG.CLOSE_MIN):
+                    CONFIG.MULTISTOCK[stock_name]['CMP'] = float(format(float(message['ltp']), '.2f'))
+                    CONFIG.MULTISTOCK[stock_name]['LTP'][timestamp] = float(format(float(message['ltp']), '.2f'))
+                else:
+                    LOG.error("%s - Not handling quotes as Current timestamp beyond trading time.", stock_name)
             else:
-                LOG.error("%s - Not handling quotes as Current timestamp beyond trading time.", stock_name)
-        else:
-            LOG.error("%s - not available in instrument list", stock_name)
-            return
+                LOG.error("%s - not available in instrument list", stock_name)
+                return
+
+        if message['exchange'] == 'NSE_INDEX':
+            LOG.info("Quote Update: %s - %s      ltp - %s", timestamp, stock_name, (message['live_ltp']))
+            if (stock_name in CONFIG.TRADE_INDICES):
+                timestamp = datetime.datetime.fromtimestamp(float(message['timestamp']) / 1000.0)
+                if not (timestamp.hour > CONFIG.CLOSE_HR and timestamp.minute >= CONFIG.CLOSE_MIN):
+                    CONFIG.MULTISTOCK[stock_name]['CMP'] = float(format(float(message['live_ltp']), '.2f'))
+                    CONFIG.MULTISTOCK[stock_name]['LTP'][timestamp] = float(format(float(message['live_ltp']), '.2f'))
+                else:
+                    LOG.error("%s - Not handling quotes as Current timestamp beyond trading time.", stock_name)
+            else:
+                LOG.error("%s - not available in instrument list", stock_name)
+                return
 
     except Exception as e:
         LOG.error("Exception during quote update event handler.")
@@ -311,6 +327,7 @@ def unsubscribe_stocks(exchange):
                     CONFIG.UPSTOX_SESSION.unsubscribe(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol('NSE_EQ', stock),
                                                       LiveFeedType.LTP)
                     LOG.info("%s - NSE_EQ -Live feed unsubscription successful.", stock)
+                    retry = 1
                 break
 
             if exchange == 'MCX_FO':
@@ -318,10 +335,12 @@ def unsubscribe_stocks(exchange):
                     CONFIG.UPSTOX_SESSION.unsubscribe(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol('MCX_FO', "CRUDEOIL18DECFUT"),
                                                     LiveFeedType.LTP)
                     LOG.info("%s - MCX_FO - Live feed unsubscription successful.", stock)
+                    retry = 1
                 break
 
         except Exception as e:
-            LOG.error("Exception during unsubscription. Attempt:%d", retry)
+            LOG.error("Exception during unsubscription. Attempt:%d, %s", retry, str(e))
+            time.sleep(5)
             retry = retry + 1
             if retry == 5:
                 LOG.error("All retries failed for live feed unsubscription. Exiting Datafetcher")
@@ -330,7 +349,7 @@ def unsubscribe_stocks(exchange):
 
 
 def subscribe_stocks(exchange):
-    if exchange not in ['NSE_EQ','NSE_FO','BSE_EQ', 'BSE_FO','MCX_FO']:
+    if exchange not in ['NSE_EQ','NSE_FO','BSE_EQ','BSE_FO','MCX_FO','NSE_INDEX']:
         LOG.error("Invalid Exchange. Stock subscprition failed.")
         return False
 
@@ -351,6 +370,20 @@ def subscribe_stocks(exchange):
                     LOG.info("%s - MCX_FO -Live feed subscription successful.", stock)
                 break
 
+            if exchange=='NSE_FO':
+                for stock in CONFIG.TRADE_INSTRUMENT:
+                    CONFIG.UPSTOX_SESSION.subscribe(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol('NSE_FO', stock),
+                                                      LiveFeedType.Full)
+                    LOG.info("%s - NSE_FO - Live feed subscription successful.", stock)
+                break
+
+            if exchange=='NSE_INDEX':
+                for stock in CONFIG.TRADE_INDICES:
+                    CONFIG.UPSTOX_SESSION.subscribe(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol('NSE_INDEX', stock),
+                                                      LiveFeedType.Full)
+                    LOG.info("%s - NSE_FO - Live feed subscription successful.", stock)
+                break
+
         except Exception as e:
             LOG.error("Exception during subscription. Attempt:%d", retry)
             retry = retry + 1
@@ -358,15 +391,21 @@ def subscribe_stocks(exchange):
                 LOG.error("All retries failed for live feed subscription. Exiting Datafetcher")
                 return -1
 
+    return
+
 
 
 def main_upstox():
     CONFIG.UPSTOX_SESSION.set_on_quote_update(event_handler_quote_update)
     CONFIG.UPSTOX_SESSION.set_on_disconnect(event_handler_quote_disconnect)
     CONFIG.UPSTOX_SESSION.get_master_contract('NSE_EQ')
+    #print(CONFIG.UPSTOX_SESSION.get_master_contract('NSE_EQ'))
+    CONFIG.UPSTOX_SESSION.get_master_contract('NSE_INDEX')
+    #print(CONFIG.UPSTOX_SESSION.get_master_contract('NSE_INDEX'))
     #CONFIG.UPSTOX_SESSION.get_master_contract('NSE_FO')
     #CONFIG.UPSTOX_SESSION.get_master_contract('MCX_FO')
     #print(CONFIG.UPSTOX_SESSION.get_master_contract('MCX_FO'))
+
     """
     First unsubscribe the stocks.
     """
@@ -378,6 +417,7 @@ def main_upstox():
     Perform a fresh subscription.
     """
     subscribe_stocks('NSE_EQ')
+    subscribe_stocks('NSE_INDEX')
     #subscribe_stocks('MCX_FO')
 
     LOG.info("Starting the websocket...")
@@ -391,6 +431,7 @@ def main_upstox():
 
 
 def main():
+
     global LOG
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     timestr = time.strftime("%Y-%m-%d.%H%M%S")
@@ -414,7 +455,7 @@ def main():
     return
 
 
-"""
+
 if __name__ == '__main__':
     CONFIG.init()
     auth = Authenticate()
@@ -424,5 +465,5 @@ if __name__ == '__main__':
         os._exit(1)
 
     main()
-"""
+
 

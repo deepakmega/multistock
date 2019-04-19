@@ -6,6 +6,7 @@ Created on 09-Aug-2017
 
 
 import json
+import csv
 import pandas as pd
 import threading
 
@@ -35,6 +36,7 @@ MUTEX = threading.Lock()
 credentials_dict = json.load(open(STD_PATH+"configfiles/credentials_upstox.txt"))
 
 #######################################################################################################################
+"""
 TRADE_INSTRUMENT = ["RELIANCE", "RELINFRA", "INFY", "ICICIBANK", "AXISBANK", "AUROPHARMA", "BANDHANBNK", "PEL", "SUNTV",
                     "MARUTI", "INDUSINDBK", "HEROMOTOCO", 'LUPIN', "ULTRACEMCO", "BAJAJFINSV","ABB", "BRITANNIA", "OFSS",
                     "HDFC", "ASIANPAINT", "BAJAJ-AUTO", "IBULHSGFIN", "LT", "UPL", "KOTAKBANK","COLPAL","DABUR","MARICO",
@@ -48,9 +50,12 @@ TRADE_INSTRUMENT = ["RELIANCE", "RELINFRA", "INFY", "ICICIBANK", "AXISBANK", "AU
                     "GSKCONS", "KANSAINER", "SANOFI", "HEXAWARE", "SBIN", "YESBANK", "DHFL", "MGL", "GAIL", "ADANIPORTS", "ESCORTS",
                     "HEG", "GNFC", "GRUH", "BBTC", "LTI", "CYIENT", "NAUKRI", "GRAPHITE", "IBVENTURES", "DBL", "VIPIND",
                     "RAYMOND", "CESC", "WOCKPHARMA", "CAPF", "MFSL", "GODFRYPHLP", "JUSTDIAL", "BEML"]
+"""
+TRADE_INSTRUMENT = []#["RELIANCE", "INFY", "TCS","AXISBANK","BAJFINANCE","HDFCBANK","HDFC","ASIANPAINT", "ACC","MARUTI"]
+TRADE_INDICES = ["NIFTY_50"] #[ "NIFTY_IT", "NIFTY_BANK"]
 
 
-TRADE_INSTRUMENT_MCX_FO = ["CRUDEOIL18DECFUT","CRUDEOIL19JANFUT"]
+TRADE_INSTRUMENT_MCX_FO = []
 
 #For testing...
 #TRADE_INSTRUMENT = TRADE_INSTRUMENT_MCX_FO
@@ -81,7 +86,7 @@ CLOSE_MIN = 30
 Multistock constants
 '''
 MULTISTOCK = {}
-for stock in TRADE_INSTRUMENT:
+for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]={}
     MULTISTOCK[stock]['CMP'] = None
     MULTISTOCK[stock]['LTP'] = {}
@@ -173,14 +178,18 @@ for stock in TRADE_INSTRUMENT:
     MULTISTOCK[stock]['1WEEK']['TRUE_RANGE'] =  None
     MULTISTOCK[stock]['1WEEK']['SUPERTREND'] = None
 
-    MULTISTOCK[stock]['DataFrame'] = pd.DataFrame(0, index=['5Min', '10Min', '15Min', '30Min', '1H', '1D','1W'],
+    MULTISTOCK[stock]['1MONTH'] = {}
+    MULTISTOCK[stock]['1MONTH']['TICKS'] = pd.DataFrame()
+
+    MULTISTOCK[stock]['DataFrame'] = pd.DataFrame(dtype=(float), index=['5Min', '10Min', '15Min', '30Min', '1H', '1D','1W'],
                                                   columns=['10SMA', '50SMAL','50SMA','50SMAH', '100SMA', '150SMA', '200SMA', '400SMA',
                                                            'BB_50_UP', 'BB_50_DOWN'])
 
-    MULTISTOCK[stock]['Option_chain'] = pd.DataFrame(0, index=range(0,3),
+    MULTISTOCK[stock]['Option_chain'] = pd.DataFrame(dtype=(float), index=range(0,3),
                                                                     columns=['Call-OI','Call-chngInOi','Call-Vol',
                                                                              'Strike','Put-Vol','Put-chngInOi',
                                                                              'Put-OI','Direction'])
+    MULTISTOCK[stock]['Fibonacci_level'] = pd.DataFrame(dtype=(float))
 #######################################################################################################################
 
 

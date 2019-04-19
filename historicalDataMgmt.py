@@ -1,8 +1,9 @@
 
 import config as CONFIG
 import time
+import pdb
 from time import sleep
-import  datetime
+import datetime
 from datetime import timedelta
 from threading import Timer
 from upstox_api.api import *
@@ -20,6 +21,7 @@ class Historical_Data:
     hour_hist_data = []
     day_hist_data = []
     week_hist_data = []
+    month_hist_data = []
 
     def __init__(self):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -60,7 +62,7 @@ class Historical_Data:
                 try:
                     CONFIG.MUTEX.acquire()
                     CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'] \
-                        = pd.concat([CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'], temp_df_15])
+                        = pd.concat([CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'], temp_df_15], sort=False)
                     CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'].sort_index(inplace=True)
                     CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'].drop_duplicates(subset=None, keep='last', inplace=True)
                     CONFIG.MUTEX.release()
@@ -74,19 +76,19 @@ class Historical_Data:
         return
 
 
-    def fetch_hist_data(self, exchange):
-        if exchange not in ['NSE_EQ', 'NSE_FO', 'BSE_EQ', 'BSE_FO', 'MCX_FO']:
+    def fetch_hist_data(self, exchange, instrument_list):
+        if exchange not in ['NSE_EQ', 'NSE_FO', 'BSE_EQ', 'BSE_FO', 'MCX_FO', 'NSE_INDEX']:
             self.LOG.error("Invalid Exchange. Stock subscprition failed.")
             return False
 
         MAX_RETRIES = 2
         WAIT_TIME = 0.5
-        for stock in CONFIG.TRADE_INSTRUMENT:
+        for stock in instrument_list:
             res_5 = None
             retry = 0
             while retry < MAX_RETRIES:
                 try:
-                    present_time = datetime.now()
+                    present_time = datetime.datetime.now()
                     self.min5_hist_data = []
                     """ 
                     Fetch only last 7 days stock per http request.
@@ -97,7 +99,7 @@ class Historical_Data:
                     for i in range(no_http_req):
                         sleep(0.1)
                         res_5 = CONFIG.UPSTOX_SESSION.get_ohlc(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol(exchange, stock),
-                                OHLCInterval.Minute_5, datetime.strptime(((present_time - timedelta(days=7)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.strptime(present_time.strftime("%d/%m/%Y"), '%d/%m/%Y').date())
+                                OHLCInterval.Minute_5, datetime.datetime.strptime(((present_time - timedelta(days=7)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(present_time.strftime("%d/%m/%Y"), '%d/%m/%Y').date())
                         if res_5:
                             self.min5_hist_data = self.min5_hist_data + res_5
                         present_time = (present_time - timedelta(days=7))
@@ -122,7 +124,7 @@ class Historical_Data:
             res_10 = None
             while retry < MAX_RETRIES:
                 try:
-                    present_time = datetime.now()
+                    present_time = datetime.datetime.now()
                     self.min10_hist_data = []
                     """ 
                     Fetch only last 7 days stock per http request.
@@ -133,7 +135,7 @@ class Historical_Data:
                     for i in range(no_http_req):
                         sleep(0.1)
                         res_10 = CONFIG.UPSTOX_SESSION.get_ohlc(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol(exchange, stock),
-                                OHLCInterval.Minute_10, datetime.strptime(((present_time - timedelta(days=7)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.strptime(present_time.strftime("%d/%m/%Y"), '%d/%m/%Y').date())
+                                OHLCInterval.Minute_10, datetime.datetime.strptime(((present_time - timedelta(days=7)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(present_time.strftime("%d/%m/%Y"), '%d/%m/%Y').date())
                         if res_10:
                             self.min10_hist_data = self.min10_hist_data + res_10
                         present_time = (present_time - timedelta(days=7))
@@ -158,7 +160,7 @@ class Historical_Data:
             res_30  = None
             while retry < MAX_RETRIES:
                 try:
-                    present_time = datetime.now()
+                    present_time = datetime.datetime.now()
                     self.min30_hist_data = []
                     """ 
                     Fetch only last 7 days stock per http request.
@@ -169,7 +171,7 @@ class Historical_Data:
                     for i in range(no_http_req):
                         sleep(0.1)
                         res_30 = CONFIG.UPSTOX_SESSION.get_ohlc(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol(exchange, stock),
-                                OHLCInterval.Minute_30,datetime.strptime(((present_time - timedelta(days=7)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.strptime(present_time.strftime("%d/%m/%Y"), '%d/%m/%Y').date())
+                                OHLCInterval.Minute_30,datetime.datetime.strptime(((present_time - timedelta(days=7)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(present_time.strftime("%d/%m/%Y"), '%d/%m/%Y').date())
                         if res_30:
                             self.min30_hist_data = self.min30_hist_data + res_30
                         present_time = (present_time - timedelta(days=7))
@@ -195,7 +197,7 @@ class Historical_Data:
             res_1h = None
             while retry < MAX_RETRIES:
                 try:
-                    present_time = datetime.now()
+                    present_time = datetime.datetime.now()
                     self.hour_hist_data = []
                     """ 
                     Fetch only last 7 days stock per http request.
@@ -206,7 +208,7 @@ class Historical_Data:
                     for i in range(no_http_req):
                         sleep(0.1)
                         res_1h = CONFIG.UPSTOX_SESSION.get_ohlc(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol(exchange, stock),
-                                OHLCInterval.Minute_60, datetime.strptime(((present_time - timedelta(days=7)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.strptime(present_time.strftime("%d/%m/%Y"),'%d/%m/%Y').date())
+                                OHLCInterval.Minute_60, datetime.datetime.strptime(((present_time - timedelta(days=7)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(present_time.strftime("%d/%m/%Y"),'%d/%m/%Y').date())
                         if res_1h:
                             self.hour_hist_data = self.hour_hist_data + res_1h
                         present_time = (present_time - timedelta(days=7))
@@ -234,7 +236,7 @@ class Historical_Data:
                     self.day_hist_data = []
                     sleep(0.1)
                     res_1D = CONFIG.UPSTOX_SESSION.get_ohlc(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol(exchange, stock),
-                            OHLCInterval.Day_1, datetime.strptime(((datetime.now() - timedelta(days=1200)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.strptime(datetime.now().strftime("%d/%m/%Y"),'%d/%m/%Y').date())
+                            OHLCInterval.Day_1, datetime.datetime.strptime(((datetime.datetime.now() - timedelta(days=1200)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(datetime.datetime.now().strftime("%d/%m/%Y"),'%d/%m/%Y').date())
                     if res_1D:
                         self.day_hist_data = self.day_hist_data + res_1D
                         self.LOG.info("stock - %s, Day historical data count = %d", stock, len(self.day_hist_data))
@@ -258,7 +260,7 @@ class Historical_Data:
                     self.week_hist_data = []
                     sleep(0.1)
                     res_1W = CONFIG.UPSTOX_SESSION.get_ohlc(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol(exchange, stock),
-                            OHLCInterval.Week_1, datetime.strptime(((datetime.now() - timedelta(days=5600)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.strptime(datetime.now().strftime("%d/%m/%Y"),'%d/%m/%Y').date())
+                            OHLCInterval.Week_1, datetime.datetime.strptime(((datetime.datetime.now() - timedelta(days=5600)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(datetime.datetime.now().strftime("%d/%m/%Y"),'%d/%m/%Y').date())
                     if res_1W:
                         self.week_hist_data = self.week_hist_data + res_1W
                         self.LOG.info("stock - %s, Week historical data count = %d", stock, len(self.week_hist_data))
@@ -274,6 +276,34 @@ class Historical_Data:
                     retry = retry + 1
                     sleep(WAIT_TIME)
 
+            retry = 0
+            res_1M = None
+            while retry < MAX_RETRIES:
+                try:
+                    self.month_hist_data = []
+                    sleep(0.1)
+                    res_1M = CONFIG.UPSTOX_SESSION.get_ohlc(
+                        CONFIG.UPSTOX_SESSION.get_instrument_by_symbol(exchange, stock),
+                        OHLCInterval.Month_1,
+                        datetime.datetime.strptime(((datetime.datetime.now() - timedelta(days=3650)).strftime("%d/%m/%Y")),
+                                          '%d/%m/%Y').date(),
+                        datetime.datetime.strptime(datetime.datetime.now().strftime("%d/%m/%Y"), '%d/%m/%Y').date())
+                    if res_1M:
+                        self.month_hist_data = self.month_hist_data + res_1M
+                        self.LOG.info("stock - %s, Month historical data count = %d", stock, len(self.month_hist_data))
+                        break
+                except HTTPError as er:
+                    self.LOG.error("%s - Failed to fetch 1Month historical data using API. Will retry in 1s", stock)
+                    self.LOG.error("%s", str(er))
+                    retry = retry + 1
+                    sleep(WAIT_TIME)
+                except Exception as er:
+                    self.LOG.error("%s - Failed to fetch 1Month historical data using API.Some other exceptin occured.",
+                                   stock)
+                    self.LOG.error("%s", str(er))
+                    retry = retry + 1
+                    sleep(WAIT_TIME)
+
 
 
             """
@@ -282,9 +312,9 @@ class Historical_Data:
             try:
                 temp_5 = {}
                 for x in self.min5_hist_data:
-                    time = datetime.fromtimestamp(float(x['timestamp']) / 1000.0)
+                    time = datetime.datetime.fromtimestamp(float(x['timestamp']) / 1000.0)
                     if not(time.hour > CONFIG.CLOSE_HR and time.minute>=CONFIG.CLOSE_MIN and (x['open'] == x['high']) and (x['high'] == x['close']) and (x['low'] == x['close'])):
-                        temp_5[time] = [x['open'], x['high'], x['low'], x['close']]
+                        temp_5[time] = [float(x['open']), float(x['high']), float(x['low']), float(x['close'])]
                 temp_df_5 = pd.DataFrame.from_dict(temp_5, orient='index', columns = ['open', 'high', 'low', 'close'])
                 temp_df_5 = temp_df_5.rename_axis('Date', axis=1)
                 if CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'].empty:
@@ -298,7 +328,7 @@ class Historical_Data:
                     if not temp_df_5.empty:
                         CONFIG.MUTEX.acquire()
                         CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'] \
-                            = pd.concat([CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'], temp_df_5])
+                            = pd.concat([CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'], temp_df_5], sort=False)
                         CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'].sort_index(inplace=True)
                         CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'].drop_duplicates(subset=None, keep='last', inplace=True)
                         """
@@ -320,9 +350,9 @@ class Historical_Data:
             try:
                 temp_10 = {}
                 for x in self.min10_hist_data:
-                    time = datetime.fromtimestamp(float(x['timestamp']) / 1000.0)
+                    time = datetime.datetime.fromtimestamp(float(x['timestamp']) / 1000.0)
                     if not (time.hour > CONFIG.CLOSE_HR and time.minute >= CONFIG.CLOSE_MIN and (x['open'] == x['high']) and (x['high'] == x['close']) and (x['low'] == x['close'])):
-                        temp_10[time] = [x['open'], x['high'], x['low'], x['close']]
+                        temp_10[time] = [float(x['open']), float(x['high']), float(x['low']), float(x['close'])]
                 temp_df_10 = pd.DataFrame.from_dict(temp_10, orient='index', columns=['open', 'high', 'low', 'close'])
                 temp_df_10 = temp_df_10.rename_axis('Date', axis=1)
                 if CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'].empty:
@@ -336,7 +366,7 @@ class Historical_Data:
                     if not temp_df_10.empty:
                         CONFIG.MUTEX.acquire()
                         CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'] \
-                            = pd.concat([CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'], temp_df_10])
+                            = pd.concat([CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'], temp_df_10], sort=False)
                         CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'].sort_index(inplace=True)
                         CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'].drop_duplicates(subset=None, keep='last',
                                                                                    inplace=True)
@@ -354,7 +384,7 @@ class Historical_Data:
             """
             try:
                 if not temp_df_5.empty:
-                    data_15min = temp_df_5.resample('15min').ohlc()
+                    data_15min = temp_df_5.resample('15min', base=15).ohlc()
                     self.generate_15min_candles(stock, data_15min)
                 else:
                     self.LOG.error("stock - %s, 15min candle formation failed as 5min candles dataframe is empty",
@@ -369,9 +399,9 @@ class Historical_Data:
             try:
                 temp_30 = {}
                 for x in self.min30_hist_data:
-                    time = datetime.fromtimestamp(float(x['timestamp']) / 1000.0)
+                    time = datetime.datetime.fromtimestamp(float(x['timestamp']) / 1000.0)
                     if not (time.hour > CONFIG.CLOSE_HR and time.minute >= CONFIG.CLOSE_MIN and (x['open'] == x['high']) and (x['high'] == x['close']) and (x['low'] == x['close'])):
-                        temp_30[time] = [x['open'], x['high'], x['low'], x['close']]
+                        temp_30[time] = [float(x['open']), float(x['high']), float(x['low']), float(x['close'])]
                 temp_df_30 = pd.DataFrame.from_dict(temp_30, orient='index', columns=['open', 'high', 'low', 'close'])
                 temp_df_30 = temp_df_30.rename_axis('Date', axis=1)
                 if CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'].empty:
@@ -385,7 +415,7 @@ class Historical_Data:
                     if not temp_df_30.empty:
                         CONFIG.MUTEX.acquire()
                         CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'] \
-                            = pd.concat([CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'], temp_df_30])
+                            = pd.concat([CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'], temp_df_30], sort=False)
                         CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'].sort_index(inplace=True)
                         CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'].drop_duplicates(subset=None, keep='last',
                                                                                    inplace=True)
@@ -404,10 +434,10 @@ class Historical_Data:
             try:
                 temp_1h = {}
                 for x in self.hour_hist_data:
-                    time = datetime.fromtimestamp(float(x['timestamp']) / 1000.0)
+                    time = datetime.datetime.fromtimestamp(float(x['timestamp']) / 1000.0)
                     if not (time.hour > CONFIG.CLOSE_HR and time.minute >= CONFIG.CLOSE_MIN and (
                             x['open'] == x['high']) and (x['high'] == x['close']) and (x['low'] == x['close'])):
-                        temp_1h[time] = [x['open'], x['high'], x['low'], x['close']]
+                        temp_1h[time] = [float(x['open']), float(x['high']), float(x['low']), float(x['close'])]
                 temp_df_1h = pd.DataFrame.from_dict(temp_1h, orient='index', columns=['open', 'high', 'low', 'close'])
                 temp_df_1h = temp_df_1h.rename_axis('Date', axis=1)
                 if CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'].empty:
@@ -421,7 +451,7 @@ class Historical_Data:
                     if not temp_df_1h.empty:
                         CONFIG.MUTEX.acquire()
                         CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'] \
-                            = pd.concat([CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'], temp_df_1h])
+                            = pd.concat([CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'], temp_df_1h], sort=False)
                         CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'].sort_index(inplace=True)
                         CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'].drop_duplicates(subset=None, keep='last',
                                                                                    inplace=True)
@@ -440,8 +470,8 @@ class Historical_Data:
             try:
                 temp_1D = {}
                 for x in self.day_hist_data:
-                    time = datetime.fromtimestamp(float(x['timestamp']) / 1000.0)
-                    temp_1D[time] = [x['open'], x['high'], x['low'], x['close']]
+                    time = datetime.datetime.fromtimestamp(float(x['timestamp']) / 1000.0)
+                    temp_1D[time] = [float(x['open']), float(x['high']), float(x['low']), float(x['close'])]
                 temp_df_1D = pd.DataFrame.from_dict(temp_1D, orient='index', columns=['open', 'high', 'low', 'close'])
                 temp_df_1D = temp_df_1D.rename_axis('Date', axis=1)
 
@@ -456,7 +486,7 @@ class Historical_Data:
                     if not temp_df_1D.empty:
                         CONFIG.MUTEX.acquire()
                         CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'] \
-                            = pd.concat([CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'], temp_df_1D])
+                            = pd.concat([CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'], temp_df_1D], sort=False)
                         CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'].sort_index(inplace=True)
                         CONFIG.MULTISTOCK[stock]['1DAY']['TICKS'].drop_duplicates(subset=None, keep='last',
                                                                                    inplace=True)
@@ -475,8 +505,8 @@ class Historical_Data:
             try:
                 temp_1W = {}
                 for x in self.week_hist_data:
-                    time = datetime.fromtimestamp(float(x['timestamp']) / 1000.0)
-                    temp_1W[time] = [x['open'], x['high'], x['low'], x['close']]
+                    time = datetime.datetime.fromtimestamp(float(x['timestamp']) / 1000.0)
+                    temp_1W[time] = [float(x['open']), float(x['high']), float(x['low']), float(x['close'])]
                 temp_df_1W = pd.DataFrame.from_dict(temp_1W, orient='index', columns=['open', 'high', 'low', 'close'])
                 temp_df_1W = temp_df_1W.rename_axis('Date', axis=1)
                 if CONFIG.MULTISTOCK[stock]['1WEEK']['TICKS'].empty:
@@ -490,7 +520,7 @@ class Historical_Data:
                     if not temp_df_1W.empty:
                         CONFIG.MUTEX.acquire()
                         CONFIG.MULTISTOCK[stock]['1WEEK']['TICKS'] \
-                            = pd.concat([CONFIG.MULTISTOCK[stock]['1WEEK']['TICKS'], temp_df_1W])
+                            = pd.concat([CONFIG.MULTISTOCK[stock]['1WEEK']['TICKS'], temp_df_1W], sort=False)
                         CONFIG.MULTISTOCK[stock]['1WEEK']['TICKS'].sort_index(inplace=True)
                         CONFIG.MULTISTOCK[stock]['1WEEK']['TICKS'].drop_duplicates(subset=None, keep='last',
                                                                                    inplace=True)
@@ -503,14 +533,49 @@ class Historical_Data:
                 self.LOG.error("%s - Exception occured during Week historical data formation.", stock)
                 self.LOG.error("%s", str(e))
 
+            """
+            Generate candles for 1Month.
+            """
+            try:
+                temp_1M = {}
+                for x in self.month_hist_data:
+                    time = datetime.datetime.fromtimestamp(float(x['timestamp']) / 1000.0)
+                    temp_1M[time] = [float(x['open']), float(x['high']), float(x['low']), float(x['close'])]
+                temp_df_1M = pd.DataFrame.from_dict(temp_1M, orient='index', columns=['open', 'high', 'low', 'close'])
+                temp_df_1M = temp_df_1M.rename_axis('Date', axis=1)
+                if CONFIG.MULTISTOCK[stock]['1MONTH']['TICKS'].empty:
+                    CONFIG.MUTEX.acquire()
+                    CONFIG.MULTISTOCK[stock]['1MONTH']['TICKS'] = temp_df_1M
+                    CONFIG.MULTISTOCK[stock]['1MONTH']['TICKS'].sort_index(inplace=True)
+                    CONFIG.MUTEX.release()
+                    self.LOG.info("%s - New historical data for 1MONTH frame\n%s\n", stock,
+                                  CONFIG.MULTISTOCK[stock]['1MONTH']['TICKS'].tail(10))
+                else:
+                    if not temp_df_1M.empty:
+                        CONFIG.MUTEX.acquire()
+                        CONFIG.MULTISTOCK[stock]['1MONTH']['TICKS'] \
+                            = pd.concat([CONFIG.MULTISTOCK[stock]['1MONTH']['TICKS'], temp_df_1M], sort=False)
+                        CONFIG.MULTISTOCK[stock]['1MONTH']['TICKS'].sort_index(inplace=True)
+                        CONFIG.MULTISTOCK[stock]['1MONTH']['TICKS'].drop_duplicates(subset=None, keep='last',
+                                                                                   inplace=True)
+                        CONFIG.MUTEX.release()
+                        # self.LOG.info("%s - 1Month TICKS\n%s\n", stock,
+                        #              CONFIG.MULTISTOCK[stock]['1WEEK']['TICKS'].tail(10))
+
+            except Exception as e:
+                CONFIG.MUTEX.release()
+                self.LOG.error("%s - Exception occured during Month historical data formation.", stock)
+                self.LOG.error("%s", str(e))
+
         return
 
 
     def form_realtime_tick(self):
-        for stock in CONFIG.TRADE_INSTRUMENT:
+        for stock in (CONFIG.TRADE_INSTRUMENT + CONFIG.TRADE_INDICES + CONFIG.TRADE_INSTRUMENT_MCX_FO):
             try:
                 df = pd.DataFrame(list(CONFIG.MULTISTOCK[stock]['LTP'].items()), columns=['Date', 'DateValue'])
                 data = df.set_index(['Date'])
+                data.index = pd.to_datetime(data.index, unit='s')
                 """The LTP data after resample are upto the current timeframe accuracy.
                 """
             except Exception as e:
@@ -519,7 +584,8 @@ class Historical_Data:
 
 
             try:
-                data_5min = data['DateValue'].resample('5min').ohlc()
+                data_5min = data['DateValue'].resample('5min', base=15).ohlc()
+                data_5min.dropna(inplace=True)
                 self.LOG.info("%s - 5Min resampled data\n%s\n", stock, data_5min.tail(10))
             except Exception as e:
                 self.LOG.error("stock - %s:Realtime tick formation: Exception during 5Min data resample", stock)
@@ -558,7 +624,7 @@ class Historical_Data:
                 try:
                     CONFIG.MUTEX.acquire()
                     CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'] \
-                        = pd.concat([CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'], data_5min])
+                        = pd.concat([CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'], data_5min], sort=False)
                     CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'].sort_index(inplace=True)
                     CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'].drop_duplicates(subset=None, keep='last', inplace=True)
                     CONFIG.MUTEX.release()
@@ -573,7 +639,7 @@ class Historical_Data:
                 try:
                     CONFIG.MUTEX.acquire()
                     CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'] \
-                        = pd.concat([CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'], data_10min])
+                        = pd.concat([CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'], data_10min], sort=False)
                     CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'].sort_index(inplace=True)
                     CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'].drop_duplicates(subset=None, keep='last', inplace=True)
                     CONFIG.MUTEX.release()
@@ -588,7 +654,7 @@ class Historical_Data:
                 try:
                     CONFIG.MUTEX.acquire()
                     CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'] \
-                        = pd.concat([CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'], data_15min])
+                        = pd.concat([CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'], data_15min], sort=False)
                     CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'].sort_index(inplace=True)
                     CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'].drop_duplicates(subset=None, keep='last', inplace=True)
                     CONFIG.MUTEX.release()
@@ -603,7 +669,7 @@ class Historical_Data:
                 try:
                     CONFIG.MUTEX.acquire()
                     CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'] \
-                        = pd.concat([CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'], data_30min])
+                        = pd.concat([CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'], data_30min], sort=False)
                     CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'].sort_index(inplace=True)
                     CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'].drop_duplicates(subset=None, keep='last', inplace=True)
                     CONFIG.MUTEX.release()
@@ -618,7 +684,7 @@ class Historical_Data:
                 try:
                     CONFIG.MUTEX.acquire()
                     CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'] \
-                        = pd.concat([CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'], data_1hour])
+                        = pd.concat([CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'], data_1hour], sort=False)
                     CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'].sort_index(inplace=True)
                     CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'].drop_duplicates(subset=None, keep='last', inplace=True)
                     CONFIG.MUTEX.release()
@@ -634,7 +700,8 @@ class Historical_Data:
 
 
     def main_hist_data(self):
-        self.fetch_hist_data(exchange='NSE_EQ')
+        self.fetch_hist_data(exchange='NSE_EQ', instrument_list=CONFIG.TRADE_INSTRUMENT)
+        self.fetch_hist_data(exchange='NSE_INDEX', instrument_list=CONFIG.TRADE_INDICES)
         self.form_realtime_tick()
         return
 
@@ -644,10 +711,12 @@ class Historical_Data:
 
 def main():
     obj = Historical_Data()
-    market_end_time = datetime.now().replace(hour=CONFIG.CLOSE_HR, minute=CONFIG.CLOSE_MIN, second=0, microsecond=0)
+    market_end_time = datetime.datetime.now().replace(hour=CONFIG.CLOSE_HR, minute=CONFIG.CLOSE_MIN, second=0, microsecond=0)
     CONFIG.UPSTOX_SESSION.get_master_contract('NSE_EQ')
-    #CONFIG.UPSTOX_SESSION.get_master_contract('NSE_FO')
-    #CONFIG.UPSTOX_SESSION.get_master_contract('MCX_FO')
+    CONFIG.UPSTOX_SESSION.get_master_contract('NSE_FO')
+    CONFIG.UPSTOX_SESSION.get_master_contract('MCX_FO')
+    CONFIG.UPSTOX_SESSION.get_master_contract('NSE_INDEX')
+
 
     while True:
         Timer((15), obj.main_hist_data, []).run()
@@ -660,7 +729,7 @@ def main():
     return
 
 
-"""
+
 if __name__ == '__main__':
     import config as CONFIG
     from authentication import Authenticate
@@ -673,4 +742,3 @@ if __name__ == '__main__':
 
 
     main()
-"""

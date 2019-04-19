@@ -25,6 +25,7 @@ import historicalDataMgmt
 import simpleMovingAvg
 import option_chain
 import processor
+import fibRetrace
 
 class GlobalInst(object):
     '''
@@ -49,7 +50,8 @@ class GlobalInst(object):
         if (datetime.datetime.now().time() < datetime.time(CONFIG.OPEN_HR, CONFIG.OPEN_MIN-1, 0, 0)):
             print("Waiting for Indian market to open...")
             starttime = datetime.datetime.now().replace(microsecond=0)
-            endtime = datetime.datetime(starttime.year, starttime.month, starttime.day, CONFIG.OPEN_HR, CONFIG.OPEN_MIN-1, 0, 0)
+            endtime = datetime.datetime.now(year=starttime.year, month=starttime.month, day=starttime.day,
+                                            hour=CONFIG.OPEN_HR, minute=CONFIG.OPEN_MIN-1, second=0, microsecond=0)
             sec = int((endtime - starttime).total_seconds())
             if (sec > 0):
                 time.sleep(sec)
@@ -89,9 +91,12 @@ class GlobalInst(object):
         bollinger_t = Thread(target=bollingerBand.main)
         bollinger_t.start()
 
+        fibretrace_t = Thread(target=fibRetrace.main)
+        fibretrace_t.start()
+
+
         processor_t = Thread(target=processor.main)
         processor_t.start()
-
 
         return
 
@@ -112,4 +117,5 @@ if __name__ == '__main__':
     mainObj = GlobalInst()
     CONFIG.GlobalInstObj = mainObj
     mainObj.main()
+
 

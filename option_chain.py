@@ -40,7 +40,8 @@ class Option_Chain:
     Class: Option Chain, to analyse the current status of individual stock options.
     """
     LOG = None
-
+    written2file = True
+    read_from_file = True
 
     def __init__(self):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -57,7 +58,10 @@ class Option_Chain:
         strike_diff = None
         Option_chain_main = None
 
-        url = "https://www.nseindia.com/live_market/dynaContent/live_watch/option_chain/optionKeys.jsp?symbol=" + symbol + ""
+        if symbol == 'NIFTY_50':
+            url = "https://www.nseindia.com/live_market/dynaContent/live_watch/option_chain/optionKeys.jsp?symbol=NIFTY"
+        else:
+            url = "https://www.nseindia.com/live_market/dynaContent/live_watch/option_chain/optionKeys.jsp?symbol=" + symbol + ""
 
         while True:
             try:
@@ -206,8 +210,21 @@ class Option_Chain:
 
             CONFIG.MULTISTOCK[symbol]['Option_chain'] = Option_chain
             #self.LOG.info("\n%s\n", CONFIG.MULTISTOCK[symbol]['Option_chain'])
-            #print("Stock:",symbol)
-            #print(CONFIG.MULTISTOCK[symbol]['Option_chain'])
+            print("Stock:",symbol, "   LTP:", symbol_ltp)
+            print(CONFIG.MULTISTOCK[symbol]['Option_chain'])
+
+            if self.written2file:
+                with open(CONFIG.STD_PATH+'configfiles/option_chain_'+symbol+'.csv', mode='w') as csv_file:
+                    CONFIG.MULTISTOCK[symbol]['Option_chain'].to_csv(csv_file, index=False)
+                self.written2file = False
+
+            fromcsv = pd.DataFrame()
+            if self.read_from_file:
+                with open(CONFIG.STD_PATH+'configfiles/option_chain_'+symbol+'.csv', mode='r') as csv_file:
+                    fromcsv = pd.read_csv(csv_file)
+                self.read_from_file = False
+            print("After reading from CSV:")
+            print(fromcsv)
 
         except Exception as er:
             self.LOG.error("%s - Exception during Dataframe processing.",symbol)
@@ -218,7 +235,7 @@ class Option_Chain:
 
 
     def option_chain_main(self):
-        for id in CONFIG.TRADE_INSTRUMENT:
+        for id in (CONFIG.TRADE_INSTRUMENT+CONFIG.TRADE_INDICES+CONFIG.TRADE_INSTRUMENT_MCX_FO):
             self.parse_html(id)
             time.sleep(1)
         return
