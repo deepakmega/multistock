@@ -33,8 +33,16 @@ class FibRetrace:
     FibLevels['1WEEK'] = {}
     FibLevels['1MONTH'] = {}
     std_timeFrame = ['15MIN','30MIN','1HOUR','1DAY','1WEEK','1MONTH']
-    fiblevels = ['-1.618','-1','-0.618','-0.5','-0.382','0','0.382','0.5','0.618','1','1.382','1.618','2','2.382','2.618','3',
-                 '3.382','3.618','4','4.382','4.618']
+
+    fiblevels = ['-3.764', '-3.618', '-3.5', '-3.382', '-3.236', '-3',
+                 '-2.764', '-2.618', '-2.5', '-2.382', '-2.236', '-2',
+                 '-1.764', '-1.618', '-1.5', '-1.382', '-1.236', '-1',
+                 '0', '0.236', '0.382', '0.5', '0.618', '0.764',
+                 '1', '1.236', '1.382', '1.5', '1.618', '1.764',
+                 '2', '2.236', '2.382', '2.5', '2.618', '2.764',
+                 '3', '3.236', '3.382', '3.5', '3.618', '3.764',
+                 '4', '4.236', '4.382', '4.5', '4.618', '4.764']
+
     pd_fib = pd.DataFrame(dtype=(float), index=fiblevels, columns=std_timeFrame)
 
 
@@ -75,17 +83,15 @@ class FibRetrace:
         CONFIG.MULTISTOCK[stock]['Fibonacci_level'] = self.pd_fib
         self.pd_fib = pd.DataFrame(dtype=(float), index=self.fiblevels, columns=self.std_timeFrame)
 
+        """
         self.LOG.info("\n")
         self.LOG.info("The Timeframes and OHLC\n")
         for i in self.std_timeFrame:
             self.LOG.info("TimeFrame: %s\n", i)
             self.LOG.info("%s\n",CONFIG.MULTISTOCK[stock][i]['TICKS'].tail(1))
+        """
 
         CONFIG.MUTEX.release()
-
-        self.LOG.info("\n")
-        self.LOG.info("Fibonacci levels... for stock:%s\n", stock)
-        self.LOG.info("%s\n",CONFIG.MULTISTOCK[stock]['Fibonacci_level'])
 
         return
 
@@ -99,12 +105,43 @@ class FibRetrace:
                                 and not CONFIG.MULTISTOCK[stock]['1MONTH']['TICKS'].empty:
                 self.set_fib_level(stock)
 
+        self.track_fib_levels()
 
         return
 
     def track_fib_levels(self):
+        for stock in (CONFIG.TRADE_INSTRUMENT + CONFIG.TRADE_INDICES + CONFIG.TRADE_INSTRUMENT_MCX_FO):
+            if not CONFIG.MULTISTOCK[stock]['Fibonacci_level'].empty:
+                cur_close = float(CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'].tail(1).close.values[-1])
+                self.LOG.info("Tracking Fib levels for stock - %s", stock)
+                """ Check the CMP at month level"""
+                for fib in range(len(self.fiblevels)):
+                    if (fib + 1 < len(self.fiblevels)):
+                        cur_fib = CONFIG.MULTISTOCK[stock]['Fibonacci_level'].at[self.fiblevels[fib], '1MONTH']
+                        next_fib = CONFIG.MULTISTOCK[stock]['Fibonacci_level'].at[self.fiblevels[fib + 1], '1MONTH']
+                        if(cur_fib < cur_close) and ( next_fib > cur_close):
+                            self.LOG.info("Montly levels: close=%f  > %s(%s) and < %s(%s)",
+                                      cur_close, cur_fib, self.fiblevels[fib], next_fib, self.fiblevels[fib + 1])
+
+                for fib in range(len(self.fiblevels)):
+                    if (fib + 1 < len(self.fiblevels)):
+                        cur_fib = CONFIG.MULTISTOCK[stock]['Fibonacci_level'].at[self.fiblevels[fib], '1WEEK']
+                        next_fib = CONFIG.MULTISTOCK[stock]['Fibonacci_level'].at[self.fiblevels[fib + 1], '1WEEK']
+                        if (cur_fib < cur_close) and (next_fib > cur_close):
+                            self.LOG.info("Weekly levels: close=%f  > %s(%s) and < %s(%s)",
+                                      cur_close, cur_fib, self.fiblevels[fib], next_fib, self.fiblevels[fib + 1])
+
+                for fib in range(len(self.fiblevels)):
+                    if (fib + 1 < len(self.fiblevels)):
+                        cur_fib = CONFIG.MULTISTOCK[stock]['Fibonacci_level'].at[self.fiblevels[fib], '1DAY']
+                        next_fib = CONFIG.MULTISTOCK[stock]['Fibonacci_level'].at[self.fiblevels[fib + 1], '1DAY']
+                        if (cur_fib < cur_close) and (next_fib > cur_close):
+                            self.LOG.info("Daily levels: close=%f  > %s(%s) and < %s(%s)",
+                                      cur_close, cur_fib, self.fiblevels[fib], next_fib, self.fiblevels[fib + 1])
+
+                self.LOG.info("%s\n", CONFIG.MULTISTOCK[stock]['Fibonacci_level'])
+
         return
-            
 
 
 def main():
@@ -156,6 +193,7 @@ def fib_level_offline(pd_fib, fiblevels, timeFrame, ref_candle_hi, ref_candle_lo
 
     return
 
+
 if __name__=='__main__':
     """
                         timeframe:[ High , low]
@@ -181,5 +219,20 @@ if __name__=='__main__':
     for i in std_timeFrame.keys():
         fib_level_offline(pd_fib, fiblevels, i, std_timeFrame[i][0], std_timeFrame[i][1])
 
+    cur_close = 11752.80
+    for fib in range(len(fiblevels)):
+        if (fib+1 < len(fiblevels)) and (pd_fib.at[fiblevels[fib], '1MONTH'] < cur_close) and \
+                (pd_fib.at[fiblevels[fib+1], '1MONTH'] > cur_close):
+           print("Cur close", cur_close," is above Monthly Fib:", fiblevels[fib]," and less than monthly Fib:", fiblevels[fib+1])
+
+    for fib in range(len(fiblevels)):
+        if (fib+1 < len(fiblevels)) and (pd_fib.at[fiblevels[fib], '1WEEK'] < cur_close) and \
+                (pd_fib.at[fiblevels[fib+1], '1WEEK'] > cur_close):
+            print("Cur close", cur_close, " is above Weekly Fib:", fiblevels[fib], " and less than weekly Fib:", fiblevels[fib+1])
+
+    for fib in range(len(fiblevels)):
+        if (fib+1 < len(fiblevels)) and (pd_fib.at[fiblevels[fib], '1DAY'] < cur_close) and \
+                (pd_fib.at[fiblevels[fib+1], '1DAY'] > cur_close):
+            print("Cur close", cur_close, " is above daily Fib:", fiblevels[fib], " and less than daily Fib:", fiblevels[fib+1])
 
     print(pd_fib)

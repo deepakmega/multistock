@@ -14,6 +14,7 @@ import requests
 from requests import HTTPError
 
 class Historical_Data:
+    std_day_cnt = 6
     LOG = None
     min5_hist_data = []
     min10_hist_data = []
@@ -91,18 +92,18 @@ class Historical_Data:
                     present_time = datetime.datetime.now()
                     self.min5_hist_data = []
                     """ 
-                    Fetch only last 7 days stock per http request.
-                    Lets fetch last 49 days data through 7 http request
+                    Fetch only last 6 days stock per http request.
+                    Lets fetch last 48 days data through 8 http request
                     """
                     i = 0
-                    no_http_req = 7
+                    no_http_req = 8
                     for i in range(no_http_req):
                         sleep(0.1)
                         res_5 = CONFIG.UPSTOX_SESSION.get_ohlc(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol(exchange, stock),
-                                OHLCInterval.Minute_5, datetime.datetime.strptime(((present_time - timedelta(days=7)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(present_time.strftime("%d/%m/%Y"), '%d/%m/%Y').date())
+                                OHLCInterval.Minute_5, datetime.datetime.strptime(((present_time - timedelta(days=self.std_day_cnt)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(present_time.strftime("%d/%m/%Y"), '%d/%m/%Y').date())
                         if res_5:
                             self.min5_hist_data = self.min5_hist_data + res_5
-                        present_time = (present_time - timedelta(days=7))
+                        present_time = (present_time - timedelta(days=self.std_day_cnt))
 
                     if i==(no_http_req-1):
                         self.LOG.info("stock - %s, 5min historical data count = %d", stock, len(self.min5_hist_data))
@@ -128,17 +129,17 @@ class Historical_Data:
                     self.min10_hist_data = []
                     """ 
                     Fetch only last 7 days stock per http request.
-                    Lets fetch last 28 days data through 4 http request
+                    Lets fetch last 42 days data through 6 http request
                     """
                     i = 0
                     no_http_req = 6
                     for i in range(no_http_req):
                         sleep(0.1)
                         res_10 = CONFIG.UPSTOX_SESSION.get_ohlc(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol(exchange, stock),
-                                OHLCInterval.Minute_10, datetime.datetime.strptime(((present_time - timedelta(days=7)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(present_time.strftime("%d/%m/%Y"), '%d/%m/%Y').date())
+                                OHLCInterval.Minute_10, datetime.datetime.strptime(((present_time - timedelta(days=self.std_day_cnt)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(present_time.strftime("%d/%m/%Y"), '%d/%m/%Y').date())
                         if res_10:
                             self.min10_hist_data = self.min10_hist_data + res_10
-                        present_time = (present_time - timedelta(days=7))
+                        present_time = (present_time - timedelta(days=self.std_day_cnt))
 
                     if i==(no_http_req-1):
                         self.LOG.info("stock - %s, 10min historical data count = %d", stock, len(self.min10_hist_data))
@@ -163,18 +164,18 @@ class Historical_Data:
                     present_time = datetime.datetime.now()
                     self.min30_hist_data = []
                     """ 
-                    Fetch only last 7 days stock per http request.
-                    Lets fetch last 98 days data through 10 http request
+                    Fetch only last 6 days stock per http request.
+                    Lets fetch last 98 days data through 11 http request
                     """
                     i = 0
-                    no_http_req = 10
+                    no_http_req = 11
                     for i in range(no_http_req):
                         sleep(0.1)
                         res_30 = CONFIG.UPSTOX_SESSION.get_ohlc(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol(exchange, stock),
-                                OHLCInterval.Minute_30,datetime.datetime.strptime(((present_time - timedelta(days=7)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(present_time.strftime("%d/%m/%Y"), '%d/%m/%Y').date())
+                                OHLCInterval.Minute_30,datetime.datetime.strptime(((present_time - timedelta(days=self.std_day_cnt)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(present_time.strftime("%d/%m/%Y"), '%d/%m/%Y').date())
                         if res_30:
                             self.min30_hist_data = self.min30_hist_data + res_30
-                        present_time = (present_time - timedelta(days=7))
+                        present_time = (present_time - timedelta(days=self.std_day_cnt))
 
 
                     if i == (no_http_req - 1):
@@ -200,7 +201,7 @@ class Historical_Data:
                     present_time = datetime.datetime.now()
                     self.hour_hist_data = []
                     """ 
-                    Fetch only last 7 days stock per http request.
+                    Fetch only last 6 days stock per http request.
                     Lets fetch last 196 days data through 12 http request
                     """
                     i = 0
@@ -208,10 +209,10 @@ class Historical_Data:
                     for i in range(no_http_req):
                         sleep(0.1)
                         res_1h = CONFIG.UPSTOX_SESSION.get_ohlc(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol(exchange, stock),
-                                OHLCInterval.Minute_60, datetime.datetime.strptime(((present_time - timedelta(days=7)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(present_time.strftime("%d/%m/%Y"),'%d/%m/%Y').date())
+                                OHLCInterval.Minute_60, datetime.datetime.strptime(((present_time - timedelta(days=self.std_day_cnt)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(present_time.strftime("%d/%m/%Y"),'%d/%m/%Y').date())
                         if res_1h:
                             self.hour_hist_data = self.hour_hist_data + res_1h
-                        present_time = (present_time - timedelta(days=7))
+                        present_time = (present_time - timedelta(days=self.std_day_cnt))
 
                     if i == (no_http_req - 1):
                         self.LOG.info("stock - %s, hour historical data count = %d", stock, len(self.hour_hist_data))
@@ -234,7 +235,7 @@ class Historical_Data:
             while retry < MAX_RETRIES:
                 try:
                     self.day_hist_data = []
-                    sleep(0.1)
+                    sleep(1)
                     res_1D = CONFIG.UPSTOX_SESSION.get_ohlc(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol(exchange, stock),
                             OHLCInterval.Day_1, datetime.datetime.strptime(((datetime.datetime.now() - timedelta(days=1200)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(datetime.datetime.now().strftime("%d/%m/%Y"),'%d/%m/%Y').date())
                     if res_1D:
@@ -258,7 +259,7 @@ class Historical_Data:
             while retry < MAX_RETRIES:
                 try:
                     self.week_hist_data = []
-                    sleep(0.1)
+                    sleep(1)
                     res_1W = CONFIG.UPSTOX_SESSION.get_ohlc(CONFIG.UPSTOX_SESSION.get_instrument_by_symbol(exchange, stock),
                             OHLCInterval.Week_1, datetime.datetime.strptime(((datetime.datetime.now() - timedelta(days=5600)).strftime("%d/%m/%Y")), '%d/%m/%Y').date(),datetime.datetime.strptime(datetime.datetime.now().strftime("%d/%m/%Y"),'%d/%m/%Y').date())
                     if res_1W:
@@ -281,11 +282,11 @@ class Historical_Data:
             while retry < MAX_RETRIES:
                 try:
                     self.month_hist_data = []
-                    sleep(0.1)
+                    sleep(1)
                     res_1M = CONFIG.UPSTOX_SESSION.get_ohlc(
                         CONFIG.UPSTOX_SESSION.get_instrument_by_symbol(exchange, stock),
                         OHLCInterval.Month_1,
-                        datetime.datetime.strptime(((datetime.datetime.now() - timedelta(days=3650)).strftime("%d/%m/%Y")),
+                        datetime.datetime.strptime(((datetime.datetime.now() - timedelta(days=5600)).strftime("%d/%m/%Y")),
                                           '%d/%m/%Y').date(),
                         datetime.datetime.strptime(datetime.datetime.now().strftime("%d/%m/%Y"), '%d/%m/%Y').date())
                     if res_1M:
@@ -593,6 +594,7 @@ class Historical_Data:
 
             try:
                 data_10min = data['DateValue'].resample('10min', base=15).ohlc()
+                data_10min.dropna(inplace=True)
                 self.LOG.info("%s - 10Min resampled data\n%s\n", stock, data_10min.tail(10))
             except Exception as e:
                 self.LOG.error("stock - %s:Realtime tick formation: Exception during 10Min data resample", stock)
@@ -600,6 +602,7 @@ class Historical_Data:
 
             try:
                 data_15min = data['DateValue'].resample('15min', base=15).ohlc()
+                data_15min.dropna(inplace=True)
                 self.LOG.info("%s - 15Min resampled data\n%s\n", stock, data_15min.tail(10))
             except Exception as e:
                 self.LOG.error("stock - %s:Realtime tick formation: Exception during 15Min data resample",stock)
@@ -607,6 +610,7 @@ class Historical_Data:
 
             try:
                 data_30min = data['DateValue'].resample('30Min', base=15).ohlc()
+                data_30min.dropna(inplace=True)
                 self.LOG.info("%s - 30Min resampled data\n%s\n", stock, data_30min.tail(10))
             except Exception as e:
                 self.LOG.error("Realtime tick formation: Exception during 30Min data resample")
@@ -614,6 +618,7 @@ class Historical_Data:
 
             try:
                 data_1hour = data['DateValue'].resample('60Min', base=15).ohlc()
+                data_1hour.dropna(inplace=True)
                 self.LOG.info("%s - 1Hour resampled data\n%s\n", stock, data_1hour.tail(10))
             except Exception as e:
                 self.LOG.error("stock - %s:Realtime tick formation: Exception during 1Hour data resample",stock)
@@ -624,7 +629,7 @@ class Historical_Data:
                 try:
                     CONFIG.MUTEX.acquire()
                     CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'] \
-                        = pd.concat([CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'], data_5min], sort=False)
+                        = pd.concat([CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'], data_5min], sort=True)
                     CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'].sort_index(inplace=True)
                     CONFIG.MULTISTOCK[stock]['5MIN']['TICKS'].drop_duplicates(subset=None, keep='last', inplace=True)
                     CONFIG.MUTEX.release()
@@ -639,7 +644,7 @@ class Historical_Data:
                 try:
                     CONFIG.MUTEX.acquire()
                     CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'] \
-                        = pd.concat([CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'], data_10min], sort=False)
+                        = pd.concat([CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'], data_10min], sort=True)
                     CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'].sort_index(inplace=True)
                     CONFIG.MULTISTOCK[stock]['10MIN']['TICKS'].drop_duplicates(subset=None, keep='last', inplace=True)
                     CONFIG.MUTEX.release()
@@ -654,7 +659,7 @@ class Historical_Data:
                 try:
                     CONFIG.MUTEX.acquire()
                     CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'] \
-                        = pd.concat([CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'], data_15min], sort=False)
+                        = pd.concat([CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'], data_15min], sort=True)
                     CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'].sort_index(inplace=True)
                     CONFIG.MULTISTOCK[stock]['15MIN']['TICKS'].drop_duplicates(subset=None, keep='last', inplace=True)
                     CONFIG.MUTEX.release()
@@ -669,7 +674,7 @@ class Historical_Data:
                 try:
                     CONFIG.MUTEX.acquire()
                     CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'] \
-                        = pd.concat([CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'], data_30min], sort=False)
+                        = pd.concat([CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'], data_30min], sort=True)
                     CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'].sort_index(inplace=True)
                     CONFIG.MULTISTOCK[stock]['30MIN']['TICKS'].drop_duplicates(subset=None, keep='last', inplace=True)
                     CONFIG.MUTEX.release()
@@ -684,7 +689,7 @@ class Historical_Data:
                 try:
                     CONFIG.MUTEX.acquire()
                     CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'] \
-                        = pd.concat([CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'], data_1hour], sort=False)
+                        = pd.concat([CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'], data_1hour], sort=True)
                     CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'].sort_index(inplace=True)
                     CONFIG.MULTISTOCK[stock]['1HOUR']['TICKS'].drop_duplicates(subset=None, keep='last', inplace=True)
                     CONFIG.MUTEX.release()
@@ -695,7 +700,6 @@ class Historical_Data:
                     self.LOG.error("%s", str(er))
                     continue
 
-            
         return
 
 
@@ -704,7 +708,6 @@ class Historical_Data:
         self.fetch_hist_data(exchange='NSE_INDEX', instrument_list=CONFIG.TRADE_INDICES)
         self.form_realtime_tick()
         return
-
 
 
 
@@ -719,7 +722,7 @@ def main():
 
 
     while True:
-        Timer((15), obj.main_hist_data, []).run()
+        Timer((1), obj.main_hist_data, []).run()
 
         if (CONFIG.trading_exchange == "NSE" or CONFIG.trading_exchange == "NFO"):
             if (datetime.datetime.now().replace(microsecond=0) >= market_end_time):
