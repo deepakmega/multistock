@@ -102,6 +102,9 @@ for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]['5MIN']['AVG_TRUE_RANGE'] = None
     MULTISTOCK[stock]['5MIN']['TRUE_RANGE'] = None
     MULTISTOCK[stock]['5MIN']['SUPERTREND'] = None
+    MULTISTOCK[stock]['5MIN']['MACD'] = { 'macd':[],
+                                          'macdSig':[],
+                                          'macdHist':[]}
 
     MULTISTOCK[stock]['10MIN'] = {}
     MULTISTOCK[stock]['10MIN']['TICKS'] = pd.DataFrame()
@@ -114,6 +117,9 @@ for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]['10MIN']['AVG_TRUE_RANGE'] = None
     MULTISTOCK[stock]['10MIN']['TRUE_RANGE'] = None
     MULTISTOCK[stock]['10MIN']['SUPERTREND'] = None
+    MULTISTOCK[stock]['10MIN']['MACD'] = { 'macd': [],
+                                           'macdSig': [],
+                                           'macdHist': []}
 
     MULTISTOCK[stock]['15MIN'] = {}
     MULTISTOCK[stock]['15MIN']['TICKS'] = pd.DataFrame()
@@ -127,6 +133,9 @@ for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]['15MIN']['AVG_TRUE_RANGE'] = None
     MULTISTOCK[stock]['15MIN']['TRUE_RANGE'] = None
     MULTISTOCK[stock]['15MIN']['SUPERTREND'] = None
+    MULTISTOCK[stock]['15MIN']['MACD'] = { 'macd': [],
+                                           'macdSig': [],
+                                           'macdHist': []}
 
     MULTISTOCK[stock]['30MIN'] = {}
     MULTISTOCK[stock]['30MIN']['TICKS'] = pd.DataFrame()
@@ -140,6 +149,9 @@ for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]['30MIN']['AVG_TRUE_RANGE'] = None
     MULTISTOCK[stock]['30MIN']['TRUE_RANGE'] = None
     MULTISTOCK[stock]['30MIN']['SUPERTREND'] = None
+    MULTISTOCK[stock]['30MIN']['MACD'] = {'macd': [],
+                                          'macdSig': [],
+                                          'macdHist': []}
 
     MULTISTOCK[stock]['1HOUR'] = {}
     MULTISTOCK[stock]['1HOUR']['TICKS'] = pd.DataFrame()
@@ -153,6 +165,9 @@ for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]['1HOUR']['AVG_TRUE_RANGE'] = None
     MULTISTOCK[stock]['1HOUR']['TRUE_RANGE'] = None
     MULTISTOCK[stock]['1HOUR']['SUPERTREND'] = None
+    MULTISTOCK[stock]['1HOUR']['MACD'] = { 'macd': [],
+                                           'macdSig': [],
+                                           'macdHist': []}
 
     MULTISTOCK[stock]['1DAY'] = {}
     MULTISTOCK[stock]['1DAY']['TICKS'] = pd.DataFrame()
@@ -165,6 +180,9 @@ for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]['1DAY']['AVG_TRUE_RANGE'] = None
     MULTISTOCK[stock]['1DAY']['TRUE_RANGE'] = None
     MULTISTOCK[stock]['1DAY']['SUPERTREND'] = None
+    MULTISTOCK[stock]['1DAY']['MACD'] = { 'macd': [],
+                                          'macdSig': [],
+                                          'macdHist': []}
 
     MULTISTOCK[stock]['1WEEK'] = {}
     MULTISTOCK[stock]['1WEEK']['TICKS'] = pd.DataFrame()
@@ -177,6 +195,9 @@ for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]['1WEEK']['AVG_TRUE_RANGE'] = None
     MULTISTOCK[stock]['1WEEK']['TRUE_RANGE'] =  None
     MULTISTOCK[stock]['1WEEK']['SUPERTREND'] = None
+    MULTISTOCK[stock]['1WEEK']['MACD'] = { 'macd': [],
+                                           'macdSig': [],
+                                           'macdHist': []}
 
     MULTISTOCK[stock]['1MONTH'] = {}
     MULTISTOCK[stock]['1MONTH']['TICKS'] = pd.DataFrame()

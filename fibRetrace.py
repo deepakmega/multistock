@@ -139,6 +139,31 @@ class FibRetrace:
                             self.LOG.info("Daily levels: close=%f  > %s(%s) and < %s(%s)",
                                       cur_close, cur_fib, self.fiblevels[fib], next_fib, self.fiblevels[fib + 1])
 
+                for fib in range(len(self.fiblevels)):
+                    if (fib + 1 < len(self.fiblevels)):
+                        cur_fib = CONFIG.MULTISTOCK[stock]['Fibonacci_level'].at[self.fiblevels[fib], '1HOUR']
+                        next_fib = CONFIG.MULTISTOCK[stock]['Fibonacci_level'].at[self.fiblevels[fib + 1], '1HOUR']
+                        if (cur_fib < cur_close) and (next_fib > cur_close):
+                            self.LOG.info("Hourly levels: close=%f  > %s(%s) and < %s(%s)",
+                                      cur_close, cur_fib, self.fiblevels[fib], next_fib, self.fiblevels[fib + 1])
+
+                for fib in range(len(self.fiblevels)):
+                    if (fib + 1 < len(self.fiblevels)):
+                        cur_fib = CONFIG.MULTISTOCK[stock]['Fibonacci_level'].at[self.fiblevels[fib], '30MIN']
+                        next_fib = CONFIG.MULTISTOCK[stock]['Fibonacci_level'].at[self.fiblevels[fib + 1], '30MIN']
+                        if (cur_fib < cur_close) and (next_fib > cur_close):
+                            self.LOG.info("30min levels: close=%f  > %s(%s) and < %s(%s)",
+                                      cur_close, cur_fib, self.fiblevels[fib], next_fib, self.fiblevels[fib + 1])
+
+                for fib in range(len(self.fiblevels)):
+                    if (fib + 1 < len(self.fiblevels)):
+                        cur_fib = CONFIG.MULTISTOCK[stock]['Fibonacci_level'].at[self.fiblevels[fib], '15MIN']
+                        next_fib = CONFIG.MULTISTOCK[stock]['Fibonacci_level'].at[self.fiblevels[fib + 1], '15MIN']
+                        if (cur_fib < cur_close) and (next_fib > cur_close):
+                            self.LOG.info("15min levels: close=%f  > %s(%s) and < %s(%s)",
+                                      cur_close, cur_fib, self.fiblevels[fib], next_fib, self.fiblevels[fib + 1])
+
+
                 self.LOG.info("%s\n", CONFIG.MULTISTOCK[stock]['Fibonacci_level'])
 
         return

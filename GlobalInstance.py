@@ -26,6 +26,7 @@ import simpleMovingAvg
 import option_chain
 import processor
 import fibRetrace
+import macd_calculation
 
 class GlobalInst(object):
     '''
@@ -72,11 +73,11 @@ class GlobalInst(object):
             pass
 
         CONFIG.SYSTEM_STARTED_TIME = datetime.datetime.now().replace(second=0, microsecond=0)
-
+        """
         fetcher_t = Thread(target=dataFetcher.main)
         fetcher_t.start()
         time.sleep(90)
-
+        """
         historical_t = Thread(target=historicalDataMgmt.main)
         historical_t.start()
         time.sleep(10)
@@ -94,6 +95,8 @@ class GlobalInst(object):
         fibretrace_t = Thread(target=fibRetrace.main)
         fibretrace_t.start()
 
+        macd_t = Thread(target=macd_calculation.main())
+        macd_t.start()
 
         processor_t = Thread(target=processor.main)
         processor_t.start()
