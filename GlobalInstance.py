@@ -24,7 +24,7 @@ import datetime, time
 import historicalDataMgmt
 import simpleMovingAvg
 import option_chain
-import processor
+import processor_old_dead
 import fibRetrace
 import macd_calculation
 import triangularMA
@@ -106,7 +106,7 @@ class GlobalInst(object):
         rsi_t = Thread(target=relative_strength_index.main)
         rsi_t.start()
 
-        processor_t = Thread(target=processor.main)
+        processor_t = Thread(target=processor_old_dead.main)
         processor_t.start()
 
         return
