@@ -27,6 +27,8 @@ import option_chain
 import processor
 import fibRetrace
 import macd_calculation
+import triangularMA
+import relative_strength_index
 
 class GlobalInst(object):
     '''
@@ -95,8 +97,14 @@ class GlobalInst(object):
         fibretrace_t = Thread(target=fibRetrace.main)
         fibretrace_t.start()
 
-        macd_t = Thread(target=macd_calculation.main())
+        macd_t = Thread(target=macd_calculation.main)
         macd_t.start()
+
+        trima_t = Thread(target=triangularMA.main)
+        trima_t.start()
+
+        rsi_t = Thread(target=relative_strength_index.main)
+        rsi_t.start()
 
         processor_t = Thread(target=processor.main)
         processor_t.start()
