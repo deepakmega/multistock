@@ -56,7 +56,7 @@ class Authenticate(object):
     def login(self):
         try:
             credentials_dict = json.load(open(config.STD_PATH + "configfiles/credentials_upstox.txt"))
-            self.LOG.info("Credentials loaded from the file %s", credentials_dict)
+
             if credentials_dict["BROKER"]=="UPSTOX":
                 login_status = self.login_upstox()
             elif credentials_dict["BROKER"]=="ZERODHA":
@@ -74,7 +74,7 @@ class Authenticate(object):
         for attempt in range(1, 6):
             try:
                 credentials_dict = json.load(open(config.STD_PATH+"configfiles/credentials_upstox.txt"))
-                self.LOG.info("Credentials loaded from the file %s", credentials_dict)
+
                 s = Session(credentials_dict["API_KEY"])
                 s.set_redirect_uri(credentials_dict["REDIRECT_URI"])
                 s.set_api_secret(credentials_dict["API_SECRET"])
@@ -151,8 +151,8 @@ class Authenticate(object):
     def login_zerodha(self):
         for attempt in range(1, 6):
             try:
-                credentials_dict = json.load(open(config.STD_PATH+"configfiles/credentials_upstox.txt"))
-                self.LOG.info("Credentials loaded from the file %s", credentials_dict)
+                credentials_dict = json.load(open(config.STD_PATH+"configfiles/credentials.txt"))
+
                 chromedriver_path = self.get_platform(credentials_dict)
                 self.LOG.info("Chromedriver used is %s", chromedriver_path)
 

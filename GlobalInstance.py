@@ -29,6 +29,7 @@ import fibRetrace
 import macd_calculation
 import triangularMA
 import relative_strength_index
+import stockProcess
 
 class GlobalInst(object):
     '''
@@ -75,11 +76,11 @@ class GlobalInst(object):
             pass
 
         CONFIG.SYSTEM_STARTED_TIME = datetime.datetime.now().replace(second=0, microsecond=0)
-        """
+
         fetcher_t = Thread(target=dataFetcher.main)
         fetcher_t.start()
         time.sleep(90)
-        """
+
         historical_t = Thread(target=historicalDataMgmt.main)
         historical_t.start()
         time.sleep(10)
@@ -87,7 +88,7 @@ class GlobalInst(object):
         optchain_t = Thread(target=option_chain.main)
         optchain_t.start()
         time.sleep(30)
-
+        
         sma_t = Thread(target=simpleMovingAvg.main)
         sma_t.start()
 
@@ -106,8 +107,8 @@ class GlobalInst(object):
         rsi_t = Thread(target=relative_strength_index.main)
         rsi_t.start()
 
-        processor_t = Thread(target=processor_old_dead.main)
-        processor_t.start()
+        process_t = Thread(target=stockProcess.main)
+        process_t.start()
 
         return
 

@@ -9,6 +9,7 @@ import json
 import csv
 import pandas as pd
 import threading
+import numpy as np
 
 
 #######################################################################################################################
@@ -36,7 +37,7 @@ MUTEX = threading.Lock()
 credentials_dict = json.load(open(STD_PATH+"configfiles/credentials_upstox.txt"))
 
 #######################################################################################################################
-"""
+
 TRADE_INSTRUMENT = ["RELIANCE", "RELINFRA", "INFY", "ICICIBANK", "AXISBANK", "AUROPHARMA", "BANDHANBNK", "PEL", "SUNTV",
                     "MARUTI", "INDUSINDBK", "HEROMOTOCO", 'LUPIN', "ULTRACEMCO", "BAJAJFINSV","ABB", "BRITANNIA", "OFSS",
                     "HDFC", "ASIANPAINT", "BAJAJ-AUTO", "IBULHSGFIN", "LT", "UPL", "KOTAKBANK","COLPAL","DABUR","MARICO",
@@ -49,10 +50,14 @@ TRADE_INSTRUMENT = ["RELIANCE", "RELINFRA", "INFY", "ICICIBANK", "AXISBANK", "AU
                     "SUNPHARMA", "SOBHA", "GODREJPROP", "BHARTIARTL", "MPHASIS", "WHIRLPOOL", "CRISIL", "GLAXO", "COLPAL", "PFIZER",
                     "GSKCONS", "KANSAINER", "SANOFI", "HEXAWARE", "SBIN", "YESBANK", "DHFL", "MGL", "GAIL", "ADANIPORTS", "ESCORTS",
                     "HEG", "GNFC", "GRUH", "BBTC", "LTI", "CYIENT", "NAUKRI", "GRAPHITE", "IBVENTURES", "DBL", "VIPIND",
-                    "RAYMOND", "CESC", "WOCKPHARMA", "CAPF", "MFSL", "GODFRYPHLP", "JUSTDIAL", "BEML"]
+                    "RAYMOND", "CESC", "WOCKPHARMA", "MFSL", "GODFRYPHLP", "JUSTDIAL", "BEML"]
 """
-TRADE_INSTRUMENT = ["RELIANCE", "INFY", "TCS"]#["RELIANCE", "INFY", "TCS","AXISBANK","BAJFINANCE","HDFCBANK","HDFC","ASIANPAINT", "ACC","MARUTI"]
-TRADE_INDICES = ["NIFTY_50"] #[ "NIFTY_IT", "NIFTY_BANK"]
+TRADE_INSTRUMENT = ["RELIANCE", "INFY", "TCS", "ICICIBANK", "AXISBANK", "AUROPHARMA",
+                    "INDUSINDBK", "HEROMOTOCO", 'LUPIN', "ULTRACEMCO", "BAJAJFINSV",
+                    "HDFC", "ASIANPAINT", "BAJAJ-AUTO","DRREDDY", "TECHM", "BATAINDIA",
+                    "MINDTREE","CANBK", "AJANTPHARM", "DIVISLAB"]#["RELIANCE", "INFY", "TCS","AXISBANK","BAJFINANCE","HDFCBANK","HDFC","ASIANPAINT", "ACC","MARUTI"]
+"""
+TRADE_INDICES = ["NIFTY_50", "NIFTY_BANK"] #[ "NIFTY_IT", "NIFTY_BANK"]
 
 
 TRADE_INSTRUMENT_MCX_FO = []
@@ -102,11 +107,11 @@ for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]['5MIN']['AVG_TRUE_RANGE'] = None
     MULTISTOCK[stock]['5MIN']['TRUE_RANGE'] = None
     MULTISTOCK[stock]['5MIN']['SUPERTREND'] = None
-    MULTISTOCK[stock]['5MIN']['TRIMA'] = None
-    MULTISTOCK[stock]['5MIN']['RSI'] = None
-    MULTISTOCK[stock]['5MIN']['MACD'] = { 'macd':[],
-                                          'macdSig':[],
-                                          'macdHist':[]}
+    MULTISTOCK[stock]['5MIN']['TRIMA'] = np.array([])
+    MULTISTOCK[stock]['5MIN']['RSI'] = np.array([])
+    MULTISTOCK[stock]['5MIN']['MACD'] = { 'macd':np.array([]),
+                                          'macdSig':np.array([]),
+                                          'macdHist':np.array([])}
 
     MULTISTOCK[stock]['10MIN'] = {}
     MULTISTOCK[stock]['10MIN']['TICKS'] = pd.DataFrame()
@@ -119,11 +124,11 @@ for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]['10MIN']['AVG_TRUE_RANGE'] = None
     MULTISTOCK[stock]['10MIN']['TRUE_RANGE'] = None
     MULTISTOCK[stock]['10MIN']['SUPERTREND'] = None
-    MULTISTOCK[stock]['10MIN']['TRIMA'] = None
-    MULTISTOCK[stock]['10MIN']['RSI'] = None
-    MULTISTOCK[stock]['10MIN']['MACD'] = { 'macd': [],
-                                           'macdSig': [],
-                                           'macdHist': []}
+    MULTISTOCK[stock]['10MIN']['TRIMA'] = np.array([])
+    MULTISTOCK[stock]['10MIN']['RSI'] = np.array([])
+    MULTISTOCK[stock]['10MIN']['MACD'] = { 'macd': np.array([]),
+                                           'macdSig': np.array([]),
+                                           'macdHist': np.array([])}
 
     MULTISTOCK[stock]['15MIN'] = {}
     MULTISTOCK[stock]['15MIN']['TICKS'] = pd.DataFrame()
@@ -137,11 +142,11 @@ for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]['15MIN']['AVG_TRUE_RANGE'] = None
     MULTISTOCK[stock]['15MIN']['TRUE_RANGE'] = None
     MULTISTOCK[stock]['15MIN']['SUPERTREND'] = None
-    MULTISTOCK[stock]['15MIN']['TRIMA'] = None
-    MULTISTOCK[stock]['15MIN']['RSI'] = None
-    MULTISTOCK[stock]['15MIN']['MACD'] = { 'macd': [],
-                                           'macdSig': [],
-                                           'macdHist': []}
+    MULTISTOCK[stock]['15MIN']['TRIMA'] = np.array([])
+    MULTISTOCK[stock]['15MIN']['RSI'] = np.array([])
+    MULTISTOCK[stock]['15MIN']['MACD'] = { 'macd': np.array([]),
+                                           'macdSig': np.array([]),
+                                           'macdHist': np.array([])}
 
     MULTISTOCK[stock]['30MIN'] = {}
     MULTISTOCK[stock]['30MIN']['TICKS'] = pd.DataFrame()
@@ -155,11 +160,11 @@ for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]['30MIN']['AVG_TRUE_RANGE'] = None
     MULTISTOCK[stock]['30MIN']['TRUE_RANGE'] = None
     MULTISTOCK[stock]['30MIN']['SUPERTREND'] = None
-    MULTISTOCK[stock]['30MIN']['TRIMA'] = None
-    MULTISTOCK[stock]['30MIN']['RSI'] = None
-    MULTISTOCK[stock]['30MIN']['MACD'] = {'macd': [],
-                                          'macdSig': [],
-                                          'macdHist': []}
+    MULTISTOCK[stock]['30MIN']['TRIMA'] = np.array([])
+    MULTISTOCK[stock]['30MIN']['RSI'] = np.array([])
+    MULTISTOCK[stock]['30MIN']['MACD'] = {'macd': np.array([]),
+                                          'macdSig': np.array([]),
+                                          'macdHist': np.array([])}
 
     MULTISTOCK[stock]['1HOUR'] = {}
     MULTISTOCK[stock]['1HOUR']['TICKS'] = pd.DataFrame()
@@ -173,11 +178,11 @@ for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]['1HOUR']['AVG_TRUE_RANGE'] = None
     MULTISTOCK[stock]['1HOUR']['TRUE_RANGE'] = None
     MULTISTOCK[stock]['1HOUR']['SUPERTREND'] = None
-    MULTISTOCK[stock]['1HOUR']['TRIMA'] = None
-    MULTISTOCK[stock]['1HOUR']['RSI'] = None
-    MULTISTOCK[stock]['1HOUR']['MACD'] = { 'macd': [],
-                                           'macdSig': [],
-                                           'macdHist': []}
+    MULTISTOCK[stock]['1HOUR']['TRIMA'] = np.array([])
+    MULTISTOCK[stock]['1HOUR']['RSI'] = np.array([])
+    MULTISTOCK[stock]['1HOUR']['MACD'] = { 'macd': np.array([]),
+                                           'macdSig': np.array([]),
+                                           'macdHist': np.array([])}
 
     MULTISTOCK[stock]['1DAY'] = {}
     MULTISTOCK[stock]['1DAY']['TICKS'] = pd.DataFrame()
@@ -190,11 +195,11 @@ for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]['1DAY']['AVG_TRUE_RANGE'] = None
     MULTISTOCK[stock]['1DAY']['TRUE_RANGE'] = None
     MULTISTOCK[stock]['1DAY']['SUPERTREND'] = None
-    MULTISTOCK[stock]['1DAY']['TRIMA'] = None
-    MULTISTOCK[stock]['1DAY']['RSI'] = None
-    MULTISTOCK[stock]['1DAY']['MACD'] = { 'macd': [],
-                                          'macdSig': [],
-                                          'macdHist': []}
+    MULTISTOCK[stock]['1DAY']['TRIMA'] = np.array([])
+    MULTISTOCK[stock]['1DAY']['RSI'] = np.array([])
+    MULTISTOCK[stock]['1DAY']['MACD'] = { 'macd': np.array([]),
+                                          'macdSig': np.array([]),
+                                          'macdHist': np.array([])}
 
 
     MULTISTOCK[stock]['1WEEK'] = {}
@@ -208,11 +213,11 @@ for stock in (TRADE_INSTRUMENT + TRADE_INDICES + TRADE_INSTRUMENT_MCX_FO):
     MULTISTOCK[stock]['1WEEK']['AVG_TRUE_RANGE'] = None
     MULTISTOCK[stock]['1WEEK']['TRUE_RANGE'] =  None
     MULTISTOCK[stock]['1WEEK']['SUPERTREND'] = None
-    MULTISTOCK[stock]['1WEEK']['TRIMA'] = None
-    MULTISTOCK[stock]['1WEEK']['RSI'] = None
-    MULTISTOCK[stock]['1WEEK']['MACD'] = { 'macd': [],
-                                           'macdSig': [],
-                                           'macdHist': []}
+    MULTISTOCK[stock]['1WEEK']['TRIMA'] = np.array([])
+    MULTISTOCK[stock]['1WEEK']['RSI'] = np.array([])
+    MULTISTOCK[stock]['1WEEK']['MACD'] = { 'macd': np.array([]),
+                                           'macdSig': np.array([]),
+                                           'macdHist': np.array([])}
 
     MULTISTOCK[stock]['1MONTH'] = {}
     MULTISTOCK[stock]['1MONTH']['TICKS'] = pd.DataFrame()
