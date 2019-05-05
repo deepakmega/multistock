@@ -127,8 +127,6 @@ class ProcessStock:
         if stock not in self.TRADE.keys():
             self.TRADE[stock] = {}
             self.TRADE[stock]['MACD'] = {}
-            self.TRADE[stock]['MACD']['BUY'] = False
-            self.TRADE[stock]['MACD']['SELL'] = False
 
         timeFrame = '15MIN'
 
@@ -150,14 +148,11 @@ class ProcessStock:
         try:
             if (float(macdHist) > 0.0):
                 if (float(macd) > float(macdSig)):
-                    if not self.TRADE[stock]['MACD']['BUY']:
-                        #self.LOG.info("stock - %s timeFrame-%s Macd(%f) > MacdSig(%f) Signfies BUY",
-                        #          stock, timeFrame, macd, macdSig)
-                        macdMsg = "stock - " + str(stock) + " timeFrame-" + str(timeFrame) + \
-                                  " Macd(" + str(macd) + ") > MacdSig(" + str(macdSig) + ") Signfies BUY"
-                        self.process_trima(stock, "BUY", macdMsg)
-                        self.TRADE[stock]['MACD']['BUY'] = True
-                        self.TRADE[stock]['MACD']['SELL'] = False
+                    #self.LOG.info("stock - %s timeFrame-%s Macd(%f) > MacdSig(%f) Signfies BUY",
+                    #          stock, timeFrame, macd, macdSig)
+                    macdMsg = "stock - " + str(stock) + " timeFrame-" + str(timeFrame) + \
+                              " Macd(" + str(macd) + ") > MacdSig(" + str(macdSig) + ") Signfies BUY"
+                    self.process_trima(stock, "BUY", macdMsg)
         except Exception as e:
             self.LOG.error("%s - Exception occured during accessing MACD BUY processing.", stock)
             self.LOG.error("\n%s\n", str(e))
@@ -167,14 +162,11 @@ class ProcessStock:
             """ MACD histogram cross over from +ve to -ve signifies selling """
             if (float(macdHist) < 0.0):
                 if (float(macd) < float(macdSig)):
-                    if not self.TRADE[stock]['MACD']['SELL']:
-                        #self.LOG.info("stock - %s timeFrame-%s Macd(%f) < MacdSig(%f) Signfies SELL",
-                        #          stock, timeFrame, macd, macdSig)
-                        macdMsg = "stock - " + str(stock) + " timeFrame-" + str(timeFrame) + \
-                                  " Macd(" + str(macd) + ") < MacdSig(" + str(macdSig) + ") Signfies SELL"
-                        self.process_trima(stock, "SELL", macdMsg)
-                        self.TRADE[stock]['MACD']['BUY'] = False
-                        self.TRADE[stock]['MACD']['SELL'] = True
+                    #self.LOG.info("stock - %s timeFrame-%s Macd(%f) < MacdSig(%f) Signfies SELL",
+                    #          stock, timeFrame, macd, macdSig)
+                    macdMsg = "stock - " + str(stock) + " timeFrame-" + str(timeFrame) + \
+                              " Macd(" + str(macd) + ") < MacdSig(" + str(macdSig) + ") Signfies SELL"
+                    self.process_trima(stock, "SELL", macdMsg)
         except Exception as e:
             self.LOG.error("%s - Exception occured during accessing MACD SELL processing.", stock)
             self.LOG.error("\n%s\n", str(e))
